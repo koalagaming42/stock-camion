@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stock Camion">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Stock Camion</title>
+<style>
+:root{
+  --bg:#f3f5f8;--card:#fff;--text:#18202b;--muted:#6b7686;--line:#e2e6ec;
+  --primary:#1f3a5f;--primary-2:#2d5a8e;--ok:#1f9d55;--warn:#d98a00;--bad:#d64545;
+  --chip:#eef2f7;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#0f141b;--card:#18202b;--text:#e8edf3;--muted:#8d99a8;--line:#273241;
+  --primary:#4f86c6;--primary-2:#6a9fdc;--chip:#223042;--shadow:none;}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:16px}
+header{position:sticky;top:0;z-index:10;background:var(--primary);color:#fff;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:19px;margin:0;font-weight:700}
+.bell{position:relative;background:none;border:0;color:#fff;font-size:24px;padding:4px 8px}
+.badge{position:absolute;top:-2px;right:0;background:var(--bad);color:#fff;font-size:11px;font-weight:700;border-radius:10px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px}
+main{padding:12px 16px calc(90px + env(safe-area-inset-bottom));max-width:700px;margin:0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;background:none;border:0;color:var(--muted);padding:9px 0 8px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+nav button span.i{font-size:21px}
+nav button.active{color:var(--primary)}
+nav .badge{top:4px;right:calc(50% - 22px)}
+.card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--line);padding:12px;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{color:var(--muted);font-size:13px;margin-top:2px}
+.qty{font-size:22px;font-weight:700;min-width:44px;text-align:center}
+.qty.low{color:var(--bad)}.qty.mid{color:var(--warn)}.qty.ok{color:var(--ok)}
+.btn{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:600;background:var(--chip);color:var(--text)}
+.btn.primary{background:var(--primary);color:#fff}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.ok{background:var(--ok);color:#fff}
+.btn.block{width:100%;margin-top:8px}
+.round{width:42px;height:42px;border-radius:50%;border:0;font-size:22px;font-weight:700;background:var(--chip);color:var(--text)}
+.round.minus{color:var(--bad)}.round.plus{color:var(--ok)}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-size:16px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px;font-weight:600}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toolbar{display:flex;gap:8px;margin-bottom:10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}
+.chip{flex:none;border:0;background:var(--chip);color:var(--text);border-radius:16px;padding:6px 12px;font-size:13px}
+.chip.on{background:var(--primary);color:#fff}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle}
+.tag.bad{background:#fde8e8;color:var(--bad)}.tag.info{background:#e6effa;color:var(--primary-2)}
+@media (prefers-color-scheme: dark){.tag.bad{background:#3a1d1d}.tag.info{background:#1d2c3f}}
+h2{font-size:17px;margin:6px 0 10px}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.fab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:0;background:var(--primary);color:#fff;font-size:30px;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:9}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.show{display:flex}
+.sheet{background:var(--card);width:100%;max-width:700px;max-height:90vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+.sheet h3{margin:0 0 6px;font-size:18px}
+.hist .d{font-weight:700;min-width:46px;text-align:right}
+.hist .d.p{color:var(--ok)}.hist .d.m{color:var(--bad)}
+.notif{border-left:4px solid var(--warn)}
+.notif.read{opacity:.55;border-left-color:var(--line)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+.alertbar{background:#fff4e0;color:#8a5a00;border:1px solid #f1d39a;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:14px;display:flex;align-items:center;gap:8px}
+@media (prefers-color-scheme: dark){.alertbar{background:#3a2c10;color:#f3c66b;border-color:#5a4418}}
+.check{width:24px;height:24px;flex:none;accent-color:var(--primary)}
+.smallnum{width:70px;text-align:center;padding:8px}
+.preview{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:260px;overflow:auto}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.center{text-align:center}
+.mic{display:block;margin:14px auto 6px;width:84px;height:84px;border-radius:50%;border:0;background:var(--primary);color:#fff;font-size:36px}
+.mic.on{background:var(--bad);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(214,69,69,.55)}100%{box-shadow:0 0 0 20px rgba(214,69,69,0)}}
+.vrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.vrow select{flex:1}
+.hbtns{display:flex;gap:2px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚐 Stock Camion</h1>
+  <div class="hbtns">
+    <button class="bell" onclick="openVoice()" aria-label="Commande vocale">🎤</button>
+    <button class="bell" onclick="openNotifs()" aria-label="Notifications">🔔<span class="badge" id="bellBadge" hidden>0</span></button>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<button class="fab" id="fab" onclick="openItem()" aria-label="Ajouter un article">+</button>
+
+<nav>
+  <button data-tab="stock" class="active" onclick="go('stock')"><span class="i">📦</span>Stock</button>
+  <button data-tab="order" onclick="go('order')"><span class="i">🛒</span>À commander<span class="badge" id="orderBadge" hidden>0</span></button>
+  <button data-tab="history" onclick="go('history')"><span class="i">🕘</span>Historique</button>
+  <button data-tab="settings" onclick="go('settings')"><span class="i">⚙️</span>Réglages</button>
+</nav>
+
+<div class="sheet-bg" id="sheetBg" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="impGlobal" accept=".json,application/json" hidden onchange="importData(this.files[0]);this.value=''">
+
+<script>
+/* ============ Stockage local ============ */
+const KEY = 'stockCamion_v1';
+let memoryFallback = null;
+const defaults = () => ({
+  items: [],
+  history: [],
+  notifs: [],
+  settings: {
+    to: '', cc: '', tech: '',
+    subject: 'Demande de réapprovisionnement camion – {date}',
+    intro: `Salut,\n\nAvec les dernières installs et dépannages, je commence à être juste sur certaines pièces dans le camion. Pour ne pas me retrouver bloqué en intervention pourrais-tu me commander ça s'il te plait :`,
+    outro: 'Merci d\'avance.\n\nCordialement,\n{nom}'
+  },
+  lastCat: 'Tous'
+});
+function load(){
+  try {
+    const s = localStorage.getItem(KEY);
+    if (s) {
+      const d = defaults(), saved = JSON.parse(s), st = Object.assign({}, d.settings, saved.settings || {});
+      // Un champ resté vide reprend la valeur par défaut (nom, adresse…)
+      for (const k in d.settings) if (!st[k] && d.settings[k]) st[k] = d.settings[k];
+      // Anciens textes par défaut jamais modifiés → remplacés par le nouveau
+      const oldIntros = [
+        'Bonjour,\n\nPeux-tu passer commande du matériel suivant pour mon camion :',
+        `Bonjour,\n\nSuite au suivi de stock de mon véhicule d'intervention, plusieurs articles sont passés sous leur seuil minimum après les dernières installations, mises en service et opérations de maintenance.\n\nAfin de pouvoir continuer à assurer les interventions planifiées et les dépannages urgents dans les délais, sans retour au dépôt ni report de rendez-vous client, peux-tu passer commande du matériel suivant :`,
+        `Salut,\n\nAvec les dernières installs et dépannages, je commence à être juste sur certaines pièces dans le camion. Pour ne pas me retrouver bloqué en intervention ou devoir repasser au dépôt, tu pourrais me commander ça :`
+      ];
+      if (oldIntros.includes(st.intro)) st.intro = d.settings.intro;
+      return Object.assign(d, saved, {settings: st});
+    }
+  }
+  catch(e){ if (memoryFallback) return memoryFallback; }
+  return defaults();
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ memoryFallback = S; }
+  updateBadges();
+}
+let S = load();
+
+/* ============ Sécurité des données ============ */
+// Vérifie que le téléphone enregistre bien les données
+let storageOK = true;
+try { localStorage.setItem('__test', '1'); localStorage.removeItem('__test'); } catch(e){ storageOK = false; }
+// Demande au navigateur de ne pas effacer les données de l'appli quand il fait du ménage
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
+const BACKUP_DAYS = 7;
+const daysSinceBackup = () => S.lastBackup ? Math.floor((Date.now() - S.lastBackup) / 864e5) : null;
+function safetyBanner(){
+  if (!storageOK) return `<div class="alertbar" style="background:#fde8e8;color:var(--bad);border-color:#f3b4b4">⛔ <div class="grow"><b>Les données ne sont pas enregistrées</b> sur ce navigateur : tout sera perdu à la fermeture. Ouvre l'appli avec <b>Chrome</b> (ou Safari sur iPhone).</div></div>`;
+  const d = daysSinceBackup();
+  if (S.items.length && (d === null || d >= BACKUP_DAYS))
+    return `<div class="alertbar" onclick="exportData()">💾 <div class="grow">${d === null ? 'Aucune sauvegarde faite' : `Dernière sauvegarde il y a <b>${d} jours</b>`} — appuie ici pour sauvegarder</div>›</div>`;
+  return '';
+}
+let tab = 'stock', search = '', catFilter = 'Tous';
+
+/* ============ Utilitaires ============ */
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = t => new Date(t).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const today = () => new Date().toLocaleDateString('fr-FR');
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
+const isLow = it => it.qty <= it.min;
+const toOrderQty = it => Math.max((it.target || it.min) - it.qty, it.qty <= it.min ? 1 : 0);
+const lowItems = () => S.items.filter(isLow);
+const cats = () => ['Tous', ...[...new Set(S.items.map(i => i.cat || 'Divers'))].sort()];
+
+/* ============ Notifications internes ============ */
+function checkThreshold(it, before){
+  // Passage sous le seuil → notification
+  if (it.qty <= it.min && before > it.min) {
+    S.notifs.unshift({id:uid(), t:Date.now(), itemId:it.id, read:false,
+      msg:`⚠️ ${it.name} est passé sous le seuil (${it.qty} restant, seuil ${it.min}). À recommander.`});
+    toast(`⚠️ ${it.name} à recommander`);
+  }
+  if (it.qty === 0 && before > 0) {
+    S.notifs.unshift({id:uid(), t:Date.now(), itemId:it.id, read:false,
+      msg:`🚫 ${it.name} est en rupture dans le camion.`});
+  }
+  // Retour au-dessus du seuil → on réinitialise le statut "commandé"
+  if (it.qty > it.min) it.ordered = false;
+  S.notifs = S.notifs.slice(0, 200);
+}
+function updateBadges(){
+  const unread = S.notifs.filter(n => !n.read).length;
+  const low = lowItems().filter(i => !i.ordered).length;
+  $('bellBadge').hidden = !unread; $('bellBadge').textContent = unread;
+  $('orderBadge').hidden = !low; $('orderBadge').textContent = low;
+}
+
+/* ============ Mouvements ============ */
+function move(id, delta, note, quiet){
+  const it = S.items.find(i => i.id === id); if (!it || !delta) return;
+  const before = it.qty;
+  it.qty = Math.max(0, it.qty + delta);
+  const real = it.qty - before; if (!real) return;
+  S.history.unshift({id:uid(), t:Date.now(), itemId:id, name:it.name, delta:real, after:it.qty, note:note||''});
+  S.history = S.history.slice(0, 1000);
+  checkThreshold(it, before);
+  if (!quiet) { save(); render(); }
+}
+
+/* ============ Navigation ============ */
+function go(t){
+  tab = t;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  $('fab').style.display = t === 'stock' ? '' : 'none';
+  render(); window.scrollTo(0,0);
+}
+function render(){
+  ({stock:renderStock, order:renderOrder, history:renderHistory, settings:renderSettings})[tab]();
+  updateBadges();
+}
+
+/* ============ Vue Stock ============ */
+function renderStock(){
+  const q = search.toLowerCase();
+  const list = S.items
+    .filter(i => catFilter === 'Tous' || (i.cat || 'Divers') === catFilter)
+    .filter(i => !q || (i.name + ' ' + (i.ref||'') + ' ' + (i.cat||'')).toLowerCase().includes(q))
+    .sort((a,b) => (isLow(b) - isLow(a)) || a.name.localeCompare(b.name));
+  const lowN = lowItems().filter(i => !i.ordered).length;
+  $('view').innerHTML = `
+    ${safetyBanner()}
+    ${lowN ? `<div class="alertbar" onclick="go('order')">⚠️ <div class="grow"><b>${lowN} article${lowN>1?'s':''}</b> sous le seuil — à recommander</div>›</div>` : ''}
+    <div class="toolbar"><input type="search" placeholder="Rechercher (nom, réf…)" value="${esc(search)}" oninput="search=this.value;renderStockList()"><button class="round" style="flex:none;width:46px;height:46px" onclick="openVoice()" aria-label="Commande vocale">🎤</button></div>
+    <div class="chips">${cats().map(c => `<button class="chip ${c===catFilter?'on':''}" onclick="catFilter='${esc(c)}';render()">${esc(c)}</button>`).join('')}</div>
+    <div id="stockList"></div>`;
+  renderStockList(list);
+}
+function renderStockList(list){
+  if (!list) { // appelé par la recherche
+    const q = search.toLowerCase();
+    list = S.items.filter(i => catFilter === 'Tous' || (i.cat||'Divers') === catFilter)
+      .filter(i => !q || (i.name+' '+(i.ref||'')+' '+(i.cat||'')).toLowerCase().includes(q))
+      .sort((a,b) => (isLow(b)-isLow(a)) || a.name.localeCompare(b.name));
+  }
+  $('stockList').innerHTML = list.length ? list.map(it => {
+    const cls = it.qty <= it.min ? 'low' : (it.qty <= it.min * 1.5 ? 'mid' : 'ok');
+    return `<div class="card row">
+      <div class="grow" onclick="openMove('${it.id}')">
+        <div class="name">${esc(it.name)}${it.ordered?'<span class="tag info">Commandé</span>':(isLow(it)?'<span class="tag bad">Bas</span>':'')}</div>
+        <div class="sub">${esc(it.ref||'')}${it.ref?' · ':''}${esc(it.cat||'Divers')} · seuil ${it.min}${it.target?' / cible '+it.target:''}</div>
+      </div>
+      <button class="round minus" onclick="move('${it.id}',-1)">−</button>
+      <div class="qty ${cls}">${it.qty}</div>
+      <button class="round plus" onclick="move('${it.id}',1)">+</button>
+    </div>`;
+  }).join('') : `<div class="empty">${S.items.length ? 'Aucun résultat.' : `Ton stock est vide.<br>Appuie sur <b>+</b> pour ajouter ton premier article.
+      ${S.history.length ? '' : `<br><br>Tu avais déjà des données ?<button class="btn primary block" onclick="$('impGlobal').click()">📥 Restaurer une sauvegarde</button>
+      <div class="hint">Si tes articles ont disparu, c'est souvent que l'appli a été ouverte depuis un autre fichier ou un autre navigateur. Ouvre-la toujours au même endroit, ou restaure ta dernière sauvegarde.</div>`}`}</div>`;
+}
+
+/* ============ Fiche article / mouvement ============ */
+function openSheet(html){ $('sheet').innerHTML = html; $('sheetBg').classList.add('show'); }
+function closeSheet(){ stopListen(); $('sheetBg').classList.remove('show'); }
+
+function openMove(id){
+  const it = S.items.find(i => i.id === id);
+  const last = S.history.filter(h => h.itemId === id).slice(0,5);
+  openSheet(`
+    <h3>${esc(it.name)}</h3>
+    <div class="sub">${esc(it.ref||'')} ${it.ref?'·':''} ${esc(it.cat||'Divers')} — en stock : <b>${it.qty}</b> (seuil ${it.min})</div>
+    <label>Quantité</label>
+    <input id="mvQty" type="number" inputmode="numeric" min="1" value="1">
+    <label>Note (chantier, client…) – facultatif</label>
+    <input id="mvNote" placeholder="ex. Chantier Dupont">
+    <div class="grid2" style="margin-top:12px">
+      <button class="btn danger" onclick="doMove('${id}',-1)">− Retirer</button>
+      <button class="btn ok" onclick="doMove('${id}',1)">+ Ajouter</button>
+    </div>
+    ${last.length ? `<label style="margin-top:16px">Derniers mouvements</label>${last.map(h=>`<div class="sub">${fmtDate(h.t)} : <b>${h.delta>0?'+':''}${h.delta}</b> ${esc(h.note)}</div>`).join('')}` : ''}
+    <button class="btn block" onclick="openItem('${id}')">✏️ Modifier l'article</button>
+    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+}
+function doMove(id, sign){
+  const n = parseInt($('mvQty').value, 10);
+  if (!n || n < 1) return toast('Quantité invalide');
+  move(id, sign * n, $('mvNote').value.trim());
+  closeSheet(); toast(sign > 0 ? `+${n} ajouté` : `−${n} retiré`);
+}
+
+function openItem(id){
+  const it = id ? S.items.find(i => i.id === id) : {name:'',ref:'',cat:S.lastCat||'',qty:0,min:1,target:''};
+  openSheet(`
+    <h3>${id ? 'Modifier l\'article' : 'Nouvel article'}</h3>
+    <label>Désignation *</label><input id="fName" value="${esc(it.name)}" placeholder="ex. Détecteur de mouvement">
+    <div class="grid2">
+      <div><label>Référence</label><input id="fRef" value="${esc(it.ref)}" placeholder="ex. DET-200"></div>
+      <div><label>Catégorie</label><input id="fCat" list="catList" value="${esc(it.cat)}" placeholder="ex. Détection">
+        <datalist id="catList">${cats().slice(1).map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+    </div>
+    <div class="grid3">
+      <div><label>En stock</label><input id="fQty" type="number" inputmode="numeric" min="0" value="${it.qty}"></div>
+      <div><label>Seuil alerte</label><input id="fMin" type="number" inputmode="numeric" min="0" value="${it.min}"></div>
+      <div><label>Stock cible</label><input id="fTarget" type="number" inputmode="numeric" min="0" value="${it.target}"></div>
+    </div>
+    <div class="hint">Alerte quand le stock ≤ seuil. La quantité à commander = stock cible − stock actuel.</div>
+    <button class="btn primary block" onclick="saveItem('${id||''}')">Enregistrer</button>
+    ${id ? `<button class="btn danger block" onclick="delItem('${id}')">Supprimer l'article</button>` : ''}
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+  setTimeout(()=>{ if(!id) $('fName').focus(); }, 50);
+}
+function saveItem(id){
+  const name = $('fName').value.trim(); if (!name) return toast('La désignation est obligatoire');
+  const data = {
+    name, ref: $('fRef').value.trim(), cat: $('fCat').value.trim() || 'Divers',
+    qty: Math.max(0, parseInt($('fQty').value,10) || 0),
+    min: Math.max(0, parseInt($('fMin').value,10) || 0),
+    target: parseInt($('fTarget').value,10) || ''
+  };
+  S.lastCat = data.cat;
+  if (id) {
+    const it = S.items.find(i => i.id === id); const before = it.qty;
+    if (data.qty !== before) S.history.unshift({id:uid(), t:Date.now(), itemId:id, name, delta:data.qty-before, after:data.qty, note:'Correction inventaire'});
+    Object.assign(it, data); checkThreshold(it, before > it.min ? before : it.min + 1);
+  } else {
+    const it = {id:uid(), ordered:false, ...data}; S.items.push(it);
+    if (isLow(it)) checkThreshold(it, it.min + 1);
+  }
+  save(); closeSheet(); render(); toast('Article enregistré');
+}
+function delItem(id){
+  if (!confirm('Supprimer cet article du stock ?')) return;
+  S.items = S.items.filter(i => i.id !== id); save(); closeSheet(); render();
+}
+
+/* ============ Vue À commander ============ */
+let selection = {}; // id -> qty à commander
+function renderOrder(){
+  const low = lowItems().sort((a,b) => (a.ordered - b.ordered) || a.name.localeCompare(b.name));
+  low.forEach(it => { if (!(it.id in selection)) selection[it.id] = it.ordered ? 0 : toOrderQty(it); });
+  const sel = low.filter(i => selection[i.id] > 0);
+  $('view').innerHTML = `
+    <h2>Articles à recommander</h2>
+    ${low.length ? low.map(it => `
+      <div class="card row">
+        <input type="checkbox" class="check" ${selection[it.id]>0?'checked':''} onchange="selection['${it.id}']=this.checked?${toOrderQty(it)}:0;renderOrder()">
+        <div class="grow">
+          <div class="name">${esc(it.name)}${it.ordered?'<span class="tag info">Déjà demandé</span>':''}</div>
+          <div class="sub">${esc(it.ref||'')}${it.ref?' · ':''}stock ${it.qty} / seuil ${it.min}</div>
+        </div>
+        <input class="smallnum" type="number" inputmode="numeric" min="0" value="${selection[it.id]}" onchange="selection['${it.id}']=Math.max(0,parseInt(this.value,10)||0);renderOrder()">
+      </div>`).join('') : '<div class="empty">✅ Rien à recommander pour le moment.</div>'}
+    ${low.length ? `
+      <button class="btn primary block" ${sel.length?'':'disabled style="opacity:.5"'} onclick="previewMail()">✉️ Envoyer au responsable (${sel.length})</button>
+      <button class="btn block" onclick="addManual()">+ Ajouter un article hors seuil</button>` : `<button class="btn block" onclick="addManual()">+ Ajouter un article à la demande</button>`}`;
+}
+function addManual(){
+  const others = S.items.filter(i => !isLow(i));
+  if (!others.length) return toast('Aucun autre article dans le stock');
+  openSheet(`<h3>Ajouter à la commande</h3>
+    <label>Article</label><select id="mItem">${others.sort((a,b)=>a.name.localeCompare(b.name)).map(i=>`<option value="${i.id}">${esc(i.name)} (stock ${i.qty})</option>`).join('')}</select>
+    <label>Quantité à commander</label><input id="mQty" type="number" inputmode="numeric" min="1" value="1">
+    <button class="btn primary block" onclick="manualOk()">Ajouter</button>
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+}
+let extraOrder = {}; // articles ajoutés manuellement
+function manualOk(){
+  const id = $('mItem').value, n = parseInt($('mQty').value,10) || 0;
+  if (n < 1) return toast('Quantité invalide');
+  extraOrder[id] = n; closeSheet(); previewMail();
+}
+
+/* ============ Mail ============ */
+function fill(tpl){ return (tpl||'').replaceAll('{date}', today()).replaceAll('{nom}', S.settings.tech || ''); }
+function orderLines(){
+  const lines = [];
+  lowItems().forEach(it => { if (selection[it.id] > 0) lines.push({it, n:selection[it.id]}); });
+  Object.entries(extraOrder).forEach(([id,n]) => { const it = S.items.find(i=>i.id===id); if (it && n>0) lines.push({it, n}); });
+  return lines;
+}
+function buildMail(){
+  const st = S.settings;
+  const lines = orderLines().map(({it,n}) => `- ${it.name}${it.ref?' (réf. '+it.ref+')':''} : ${n}`);
+  const body = `${fill(st.intro)}\n\n${lines.join('\n')}\n\n${fill(st.outro)}`;
+  return {subject: fill(st.subject), body};
+}
+function previewMail(){
+  const lines = orderLines();
+  if (!lines.length) return toast('Sélectionne au moins un article');
+  const st = S.settings; const m = buildMail();
+  openSheet(`<h3>Aperçu du mail</h3>
+    <div class="sub">À : <b>${esc(st.to || '— non renseigné —')}</b>${st.cc?' · Cc : '+esc(st.cc):''}</div>
+    <div class="sub" style="margin-bottom:8px">Objet : <b>${esc(m.subject)}</b></div>
+    <div class="preview">${esc(m.body)}</div>
+    ${!st.to ? '<div class="hint" style="color:var(--bad)">⚠️ Renseigne l\'adresse de ton responsable dans Réglages.</div>' : ''}
+    <button class="btn primary block" onclick="sendMail()">📨 Ouvrir dans ma messagerie</button>
+    <button class="btn block" onclick="copyMail()">📋 Copier le texte</button>
+    ${Object.keys(extraOrder).length ? '<button class="btn block" onclick="extraOrder={};closeSheet();renderOrder()">Retirer les articles ajoutés à la main</button>' : ''}
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+}
+function sendMail(){
+  const st = S.settings, m = buildMail();
+  let url = `mailto:${encodeURIComponent(st.to).replace(/%40/g,'@').replace(/%2C/g,',')}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`;
+  if (st.cc) url += `&cc=${encodeURIComponent(st.cc).replace(/%40/g,'@').replace(/%2C/g,',')}`;
+  window.location.href = url;
+  setTimeout(() => {
+    openSheet(`<h3>Mail envoyé ?</h3>
+      <div class="sub">Si tu as bien envoyé le mail, je marque ces articles comme « commandés » : ils ne déclencheront plus d'alerte tant qu'ils ne sont pas réapprovisionnés.</div>
+      <button class="btn ok block" onclick="markOrdered()">✅ Oui, marquer comme commandés</button>
+      <button class="btn block" onclick="closeSheet()">Non, pas encore</button>`);
+  }, 800);
+}
+function markOrdered(){
+  const lines = orderLines();
+  lines.forEach(({it}) => it.ordered = true);
+  S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`📨 Demande envoyée au responsable : ${lines.map(l=>l.it.name+' ×'+l.n).join(', ')}`});
+  selection = {}; extraOrder = {};
+  save(); closeSheet(); render(); toast('Articles marqués comme commandés');
+}
+async function copyMail(){
+  const m = buildMail(); const txt = `Objet : ${m.subject}\n\n${m.body}`;
+  try { await navigator.clipboard.writeText(txt); toast('Texte copié'); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Texte copié'); }
+}
+
+/* ============ Historique ============ */
+let histFilter = 'all';
+function renderHistory(){
+  const list = S.history.filter(h => histFilter==='all' || (histFilter==='out'?h.delta<0:h.delta>0)).slice(0,300);
+  const now = Date.now(), week = 7*864e5;
+  const out7 = S.history.filter(h => h.delta<0 && now-h.t<week).reduce((s,h)=>s-h.delta,0);
+  const in7 = S.history.filter(h => h.delta>0 && now-h.t<week).reduce((s,h)=>s+h.delta,0);
+  $('view').innerHTML = `
+    <div class="grid2" style="margin-bottom:10px">
+      <div class="card" style="margin:0;text-align:center"><div class="sub">Retirés (7 j)</div><div class="qty low">${out7}</div></div>
+      <div class="card" style="margin:0;text-align:center"><div class="sub">Ajoutés (7 j)</div><div class="qty ok">${in7}</div></div>
+    </div>
+    <div class="chips">
+      ${[['all','Tout'],['out','Retraits'],['in','Ajouts']].map(([k,l])=>`<button class="chip ${histFilter===k?'on':''}" onclick="histFilter='${k}';renderHistory()">${l}</button>`).join('')}
+    </div>
+    ${list.length ? list.map(h => `<div class="card row hist">
+      <div class="grow"><div class="name">${esc(h.name)}</div><div class="sub">${fmtDate(h.t)}${h.note?' · '+esc(h.note):''} · reste ${h.after}</div></div>
+      <div class="d ${h.delta>0?'p':'m'}">${h.delta>0?'+':''}${h.delta}</div></div>`).join('') : '<div class="empty">Aucun mouvement.</div>'}`;
+}
+
+/* ============ Notifications ============ */
+function openNotifs(){
+  const list = S.notifs.slice(0,100);
+  openSheet(`<h3>Notifications</h3>
+    ${list.length ? list.map(n => `<div class="card notif ${n.read?'read':''}"><div>${esc(n.msg)}</div><div class="sub">${fmtDate(n.t)}</div></div>`).join('') : '<div class="empty">Aucune notification.</div>'}
+    ${lowItems().some(i=>!i.ordered) ? '<button class="btn primary block" onclick="closeSheet();go(\'order\')">🛒 Voir les articles à commander</button>' : ''}
+    ${list.length ? '<button class="btn block" onclick="S.notifs=[];save();closeSheet()">Tout effacer</button>' : ''}
+    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+  S.notifs.forEach(n => n.read = true); save();
+}
+
+/* ============ Réglages ============ */
+function renderSettings(){
+  const st = S.settings;
+  $('view').innerHTML = `
+    <h2>Mail au responsable</h2>
+    <div class="card">
+      <label>Mon nom (signature)</label><input id="sTech" value="${esc(st.tech)}" placeholder="ex. Julien Martin">
+      <label>Adresse mail du responsable</label><input id="sTo" type="email" inputmode="email" value="${esc(st.to)}" placeholder="responsable@entreprise.fr">
+      <label>Copie (Cc) – facultatif</label><input id="sCc" type="email" inputmode="email" value="${esc(st.cc)}" placeholder="ex. magasin@entreprise.fr">
+      <label>Objet par défaut</label><input id="sSubject" value="${esc(st.subject)}">
+      <label>Début du mail</label><textarea id="sIntro">${esc(st.intro)}</textarea>
+      <label>Fin du mail</label><textarea id="sOutro">${esc(st.outro)}</textarea>
+      <div class="hint">Raccourcis : <b>{date}</b> = date du jour, <b>{nom}</b> = ton nom. La liste du matériel s'insère automatiquement entre le début et la fin.</div>
+      <button class="btn primary block" onclick="saveSettings()">Enregistrer</button>
+    </div>
+    <h2>Sauvegarde</h2>
+    <div class="card">
+      <div class="sub">Les données sont stockées uniquement sur ce téléphone. Fais une sauvegarde de temps en temps (changement de téléphone, nettoyage du navigateur…).</div>
+      <div class="sub" style="margin-top:6px">Dernière sauvegarde : <b>${S.lastBackup ? fmtDate(S.lastBackup) : 'jamais'}</b> · Enregistrement sur ce téléphone : <b style="color:var(${storageOK?'--ok':'--bad'})">${storageOK ? 'actif ✓' : 'impossible ✗'}</b></div>
+      <button class="btn block" onclick="exportData()">⬇️ Exporter une sauvegarde</button>
+      <button class="btn block" onclick="$('imp').click()">⬆️ Importer une sauvegarde</button>
+      <input type="file" id="imp" accept=".json,application/json" hidden onchange="importData(this.files[0])">
+    </div>
+    <h2>Inventaire (CSV / Excel)</h2>
+    <div class="card">
+      <div class="sub">Pour échanger ton inventaire avec Excel ou un collègue. Colonnes : Désignation ; Référence ; Catégorie ; Stock ; Seuil ; Cible. Dans Excel, enregistre au format <b>CSV (séparateur : point-virgule)</b>.</div>
+      <button class="btn primary block" onclick="shareInventory()">🔄 Envoyer l'inventaire à jour (OneDrive, Drive, mail…)</button>
+      <div class="hint">Toujours le même nom de fichier (inventaire-camion.csv) : dans OneDrive ou Drive, choisis « Remplacer » pour garder un seul fichier à jour.</div>
+      <button class="btn block" onclick="exportCSV()">📤 Exporter l'inventaire (fichier daté)</button>
+      <button class="btn block" onclick="$('impCsv').click()">📥 Importer un inventaire</button>
+      <input type="file" id="impCsv" accept=".csv,.txt,text/csv,text/plain" hidden onchange="importCSV(this.files[0]);this.value=''">
+      <button class="btn block" onclick="downloadTemplate()">📝 Télécharger un modèle vide</button>
+    </div>
+    <div class="card">
+      <button class="btn danger block" onclick="resetAll()">Tout effacer</button>
+    </div>`;
+}
+function saveSettings(){
+  Object.assign(S.settings, {
+    tech:$('sTech').value.trim(), to:$('sTo').value.trim(), cc:$('sCc').value.trim(),
+    subject:$('sSubject').value, intro:$('sIntro').value, outro:$('sOutro').value
+  });
+  save(); toast('Réglages enregistrés');
+}
+function download(name, content, type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function exportData(){ S.lastBackup = Date.now(); save(); render(); download(`stock-camion-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(S,null,2), 'application/json'); }
+function exportCSV(){ download(`inventaire-${new Date().toISOString().slice(0,10)}.csv`, inventoryCSV(), 'text/csv'); }
+async function shareInventory(){
+  const name = 'inventaire-camion.csv';
+  try {
+    const file = new File([inventoryCSV()], name, {type:'text/csv'});
+    if (navigator.canShare && navigator.canShare({files:[file]})) {
+      await navigator.share({files:[file], title:'Inventaire camion', text:`Inventaire camion au ${today()}`});
+      return;
+    }
+  } catch(e){ if (e.name === 'AbortError') return; }
+  download(name, inventoryCSV(), 'text/csv');
+  toast('Partage indisponible : fichier téléchargé');
+}
+function inventoryCSV(){
+  const rows = [['Désignation','Référence','Catégorie','Stock','Seuil','Cible','Statut']]
+    .concat(S.items.slice().sort((a,b)=>(a.cat||'').localeCompare(b.cat||'')||a.name.localeCompare(b.name))
+      .map(i => [i.name,i.ref,i.cat,i.qty,i.min,i.target,i.ordered?'Commandé':(isLow(i)?'À commander':'OK')]));
+  return'\ufeff'+rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\n');
+}
+/* ============ Import inventaire CSV ============ */
+function downloadTemplate(){
+  const rows = [['Désignation','Référence','Catégorie','Stock','Seuil','Cible'],
+    ['Détecteur de mouvement','DET-200','Détection','6','2','8'],
+    ['Batterie 12V 7Ah','BAT-127','Alimentation','4','2','6']];
+  download('modele-inventaire.csv', '\ufeff'+rows.map(r=>r.map(c=>`"${c}"`).join(';')).join('\n'), 'text/csv');
+}
+function parseCSV(text){
+  text = text.replace(/^\ufeff/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  const count = ch => first.split(ch).length;
+  const sep = [';', '\t', ','].sort((a,b) => count(b) - count(a))[0];
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (c === '"') q = false;
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === sep) { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(c => c.trim())).filter(r => r.some(c => c));
+}
+let pendingImport = null;
+function importCSV(file){
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const rows = parseCSV(r.result);
+    if (!rows.length) return toast('Fichier vide');
+    // Détection des colonnes par l'en-tête
+    const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const h = rows[0].map(norm);
+    const find = keys => h.findIndex(c => keys.some(k => c.includes(k)));
+    let map = { name: find(['design','nom','article','libelle','produit']), ref: find(['ref','code']),
+                cat: find(['categ','famille','type']), qty: find(['stock','quantit','qte','qty']),
+                min: find(['seuil','min','alerte']), target: find(['cible','max','objectif']) };
+    let data = rows;
+    if (map.name >= 0) data = rows.slice(1);           // en-tête reconnu
+    else map = {name:0, ref:1, cat:2, qty:3, min:4, target:5}; // sinon ordre par défaut
+    const num = v => { const n = parseInt(String(v ?? '').replace(/\s/g,''), 10); return isNaN(n) ? null : Math.max(0, n); };
+    const get = (r, k) => map[k] >= 0 ? r[map[k]] : undefined;
+    const items = [], skipped = [];
+    data.forEach((r, i) => {
+      const name = (get(r,'name') || '').trim();
+      if (!name) { skipped.push(i + 2); return; }
+      items.push({ name, ref:(get(r,'ref')||'').trim(), cat:(get(r,'cat')||'').trim(),
+        qty:num(get(r,'qty')), min:num(get(r,'min')), target:num(get(r,'target')) });
+    });
+    if (!items.length) return toast('Aucun article trouvé dans le fichier');
+    pendingImport = items;
+    openSheet(`<h3>Importer l'inventaire</h3>
+      <div class="sub"><b>${items.length}</b> article${items.length>1?'s':''} trouvé${items.length>1?'s':''} dans « ${esc(file.name)} »${skipped.length?` · ${skipped.length} ligne(s) sans désignation ignorée(s)`:''}.</div>
+      <div class="preview" style="margin-top:8px">${items.slice(0,8).map(i=>esc(`${i.name}${i.ref?' ('+i.ref+')':''} : ${i.qty ?? '–'}`)).join('\n')}${items.length>8?'\n…':''}</div>
+      <button class="btn primary block" onclick="applyImport('merge')">🔄 Fusionner avec mon stock</button>
+      <div class="hint">Met à jour les articles existants (même référence, ou même nom si pas de référence) et ajoute les nouveaux. Rien n'est supprimé.</div>
+      <button class="btn danger block" onclick="applyImport('replace')">♻️ Remplacer tout mon stock</button>
+      <div class="hint">Supprime les articles actuels et les remplace par ceux du fichier. L'historique est conservé.</div>
+      <button class="btn block" onclick="pendingImport=null;closeSheet()">Annuler</button>`);
+  };
+  r.readAsText(file, 'UTF-8');
+}
+function applyImport(mode){
+  const items = pendingImport; if (!items) return;
+  if (mode === 'replace' && !confirm('Remplacer tout le stock actuel par ce fichier ?')) return;
+  if (mode === 'replace') S.items = [];
+  let added = 0, updated = 0;
+  const key = s => (s||'').trim().toLowerCase();
+  items.forEach(n => {
+    const ex = S.items.find(i => (n.ref && key(i.ref) === key(n.ref)) || (!n.ref && key(i.name) === key(n.name)));
+    if (ex) {
+      const before = ex.qty;
+      ex.name = n.name; if (n.ref) ex.ref = n.ref; if (n.cat) ex.cat = n.cat;
+      if (n.min !== null) ex.min = n.min;
+      if (n.target !== null) ex.target = n.target;
+      if (n.qty !== null && n.qty !== before) {
+        ex.qty = n.qty;
+        S.history.unshift({id:uid(), t:Date.now(), itemId:ex.id, name:ex.name, delta:n.qty-before, after:n.qty, note:'Import inventaire'});
+        checkThreshold(ex, before);
+      }
+      updated++;
+    } else {
+      const it = {id:uid(), ordered:false, name:n.name, ref:n.ref, cat:n.cat||'Divers',
+        qty:n.qty ?? 0, min:n.min ?? 1, target:n.target ?? ''};
+      S.items.push(it); if (isLow(it)) checkThreshold(it, it.min + 1);
+      added++;
+    }
+  });
+  pendingImport = null; save(); closeSheet(); render();
+  toast(`${added} ajouté(s), ${updated} mis à jour`);
+}
+
+/* ============ Commande vocale ============ */
+const NUMS = {un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,
+  quatorze:14,quinze:15,seize:16,vingt:20,trente:30,quarante:40,cinquante:50,soixante:60,cent:100};
+const V_OUT = ['retire','retirer','retirez','enleve','enlever','enlevez','prends','prend','pris','prendre','sors','sortir','sorti',
+  'utilise','utiliser','pose','poser','installe','consomme','moins','ote','oter','remplace'];
+const V_IN = ['ajoute','ajouter','ajoutez','rajoute','rajouter','plus','recu','recois','range','ranger','remis','remets','mets',
+  'met','rentre','rentrer','recupere','achete','livre'];
+const V_SET = ['reste','restent','inventaire','compte','corrige'];
+const UNITS = ['v','volt','volts','ah','mah','mm','cm','m','metre','metres','w','watt','watts','fils','paire','paires','go','gb','pouce','pouces','kg'];
+const STOP = ['de','des','du','la','le','les','l','d','j','je','ai','me','il','ils','en','y','dans','camion','piece','pieces','stp','svp',
+  'te','plait','merci','pour','au','aux','avec','sur','on','nous','vous','tu','qu','que','encore','aussi','bien','ok','alors','donc','voila'];
+const ACT_LABEL = {out:'− Retirer', in:'+ Ajouter', set:'= Mettre à'};
+
+function vnorm(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[,;.!?]/g,' , ').replace(/['’\-_/]/g,' ').replace(/[^a-z0-9, ]/g,' ')
+    .replace(/\b(\d+) (v|ah|mah|mm|w)\b/g,'$1$2').replace(/\s+/g,' ').trim();
+}
+const stem = w => w.length > 3 ? w.replace(/(s|x)$/,'') : w;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+function parseVoice(text){
+  const toks = vnorm(text).split(' ').filter(Boolean);
+  const cmds = []; let cur = null, last = 'out';
+  const push = () => { if (cur && cur.words.length) cmds.push(cur); cur = null; };
+  const start = a => { cur = {action: a || last, qty: null, words: []}; };
+  for (let i = 0; i < toks.length; i++) {
+    const t = toks[i];
+    if (t === ',' || t === 'et' || t === 'puis' || t === 'ensuite') { if (cur && cur.words.length) push(); continue; }
+    const verb = V_OUT.includes(t) ? 'out' : V_IN.includes(t) ? 'in' : V_SET.includes(t) ? 'set' : null;
+    if (verb) { if (cur && cur.words.length) push(); if (!cur) start(verb); else cur.action = verb; last = verb; continue; }
+    // Nombre (chiffres ou en lettres, ex. « vingt cinq »)
+    let n = null, j = i;
+    if (/^\d+$/.test(t)) n = parseInt(t, 10);
+    else if (t in NUMS) { n = 0; while (j < toks.length && toks[j] in NUMS) { n += NUMS[toks[j]]; j++; } j--; }
+    if (n !== null) {
+      const isSet = toks[i-1] === 'a';
+      // « batterie 12 volts » → le nombre fait partie du nom
+      if (cur && cur.words.length && UNITS.includes(toks[j+1])) { cur.words.push(n + toks[j+1]); i = j + 1; continue; }
+      if (cur && cur.words.length && isSet) { cur.action = 'set'; cur.qty = n; i = j; continue; }
+      if (cur && (cur.words.length || cur.qty !== null)) push();
+      if (!cur) start();
+      cur.qty = n; if (isSet) cur.action = 'set';
+      i = j; continue;
+    }
+    if (STOP.includes(t) || t === 'a') continue;
+    if (!cur) start();
+    cur.words.push(t);
+  }
+  push();
+  return cmds.map(c => ({action: c.action, qty: c.qty ?? 1, label: c.words.join(' '), itemId: matchItem(c.words)}));
+}
+function matchItem(words){
+  const ws = words.map(stem);
+  let best = null, bestScore = 0;
+  S.items.forEach(it => {
+    const toks = vnorm(it.name + ' ' + (it.ref||'')).split(' ').filter(t => t && t !== ',' && !STOP.includes(t)).map(stem);
+    let s = 0;
+    ws.forEach(w => {
+      if (toks.includes(w)) s += 1;
+      else if (w.length >= 4 && toks.some(t => t.length >= 4 && (t.startsWith(w) || w.startsWith(t)))) s += 0.6;
+    });
+    if (s > 0) s += 0.2 * (s / Math.max(toks.length, 1)); // privilégie le nom le plus précis
+    if (s > bestScore) { bestScore = s; best = it; }
+  });
+  return bestScore >= 0.6 ? best.id : '__new';
+}
+
+let rec = null, voiceCmds = [];
+const SR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
+function openVoice(){
+  const ok = !!SR();
+  openSheet(`<h3>🎤 Commande vocale</h3>
+    <div class="sub">Exemples : « retire 2 détecteurs et 1 sirène » · « ajoute 5 batteries 12V » · « il reste 3 claviers » · « j'ai pris 4 contacts et une sirène »</div>
+    ${ok ? `<button class="mic" id="micBtn" onclick="toggleListen()">🎤</button><div class="sub center" id="micState">Appuie et parle, puis dis <b>« STOP »</b></div>`
+         : `<div class="hint" style="margin-top:10px">La dictée intégrée n'est pas disponible sur ce navigateur : appuie dans le champ ci-dessous puis sur le 🎤 de ton clavier.</div>`}
+    <label>Texte compris (modifiable)</label>
+    <textarea id="vText" placeholder="ex. retire 2 détecteurs et ajoute 4 batteries"></textarea>
+    <button class="btn primary block" onclick="analyseVoice()">Analyser</button>
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+  if (ok) toggleListen();
+}
+function setMic(on){
+  if ($('micBtn')) $('micBtn').classList.toggle('on', on);
+  if ($('micState')) $('micState').innerHTML = on ? 'J\'écoute… dis <b>« STOP »</b> quand tu as fini' : 'Appuie et parle, puis dis <b>« STOP »</b>';
+}
+// L'écoute continue jusqu'à ce que tu dises « STOP » (ou que tu appuies sur le micro).
+let keepListening = false, listenStartedAt = 0;
+const MAX_LISTEN_MS = 3 * 60 * 1000; // sécurité : arrêt automatique après 3 min
+function toggleListen(){
+  if (!SR()) return;
+  if (rec || keepListening) { keepListening = false; if (rec) rec.stop(); return; } // appui = arrêt manuel
+  keepListening = true; listenStartedAt = Date.now();
+  listenOnce();
+}
+function listenOnce(){
+  const R = SR();
+  const base = $('vText') && $('vText').value.trim() ? $('vText').value.trim() + ', ' : '';
+  let finalTxt = '';
+  rec = new R(); rec.lang = 'fr-FR'; rec.interimResults = true; rec.continuous = true;
+  rec.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      if (r.isFinal) finalTxt += r[0].transcript + ' '; else interim += r[0].transcript;
+    }
+    let full = base + finalTxt + interim;
+    const m = full.match(/\bstop\b/i);
+    if (m) { // mot-clé STOP → on coupe tout ce qui suit et on arrête
+      full = full.slice(0, m.index);
+      keepListening = false;
+      if ($('vText')) $('vText').value = full.replace(/[,\s]+$/, '').trim();
+      try { rec.stop(); } catch(err){}
+      return;
+    }
+    if ($('vText')) $('vText').value = full.trim();
+  };
+  rec.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { keepListening = false; toast('Micro refusé : utilise le 🎤 du clavier'); }
+    else if (e.error === 'network') { keepListening = false; toast('Dictée indisponible sans réseau : utilise le 🎤 du clavier'); }
+    // « no-speech » (silence) : on continue d'écouter
+  };
+  rec.onend = () => {
+    rec = null;
+    if (keepListening && Date.now() - listenStartedAt > MAX_LISTEN_MS) { keepListening = false; toast('Écoute arrêtée automatiquement'); }
+    // Le téléphone coupe parfois le micro après un silence : on relance tant que STOP n'a pas été dit
+    if (keepListening && $('vText')) { try { listenOnce(); return; } catch(err){ keepListening = false; } }
+    setMic(false);
+    if ($('vText') && $('vText').value.trim()) analyseVoice();
+  };
+  try { rec.start(); setMic(true); } catch(e) { rec = null; keepListening = false; setMic(false); }
+}
+function stopListen(){ keepListening = false; if (rec) { rec.onend = null; try { rec.abort(); } catch(e){} rec = null; } }
+function analyseVoice(){
+  const text = ($('vText') ? $('vText').value : '').trim();
+  if (!text) return toast('Dis ou écris ce que tu veux faire');
+  voiceCmds = parseVoice(text);
+  if (!voiceCmds.length) return toast('Je n\'ai pas compris, reformule');
+  showVoiceConfirm();
+}
+function showVoiceConfirm(){
+  if (!voiceCmds.length) { closeSheet(); return; }
+  const items = S.items.slice().sort((a,b) => a.name.localeCompare(b.name));
+  openSheet(`<h3>Vérifie avant de valider</h3>
+    <div class="sub" style="margin-bottom:8px">Tu peux corriger l'action, la quantité ou l'article.</div>
+    ${voiceCmds.map((c,k) => `<div class="card">
+      <div class="vrow">
+        <select onchange="voiceCmds[${k}].action=this.value">${Object.entries(ACT_LABEL).map(([v,l]) => `<option value="${v}" ${c.action===v?'selected':''}>${l}</option>`).join('')}</select>
+        <input class="smallnum" type="number" inputmode="numeric" min="0" value="${c.qty}" onchange="voiceCmds[${k}].qty=this.value">
+        <button class="round" style="flex:none" onclick="voiceCmds.splice(${k},1);showVoiceConfirm()" aria-label="Supprimer">✕</button>
+      </div>
+      <select onchange="voiceCmds[${k}].itemId=this.value">
+        <option value="__new" ${c.itemId==='__new'?'selected':''}>➕ Nouvel article : ${esc(cap(c.label))}</option>
+        ${items.map(i => `<option value="${i.id}" ${c.itemId===i.id?'selected':''}>${esc(i.name)} (stock ${i.qty})</option>`).join('')}
+      </select>
+      <div class="hint">Entendu : « ${esc(c.label)} »${c.itemId==='__new'?' — aucun article correspondant trouvé':''}</div>
+    </div>`).join('')}
+    <button class="btn primary block" onclick="applyVoice()">✅ Valider (${voiceCmds.length})</button>
+    <button class="btn block" onclick="openVoice()">🎤 Recommencer</button>
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+}
+function applyVoice(){
+  let n = 0;
+  voiceCmds.forEach(c => {
+    const q = Math.max(0, parseInt(c.qty, 10) || 0);
+    let it = S.items.find(i => i.id === c.itemId);
+    if (!it) {
+      if (!c.label) return;
+      it = {id:uid(), ordered:false, name:cap(c.label), ref:'', cat:'Divers', qty:0, min:1, target:''};
+      S.items.push(it);
+    }
+    const delta = c.action === 'set' ? q - it.qty : (c.action === 'in' ? q : -q);
+    move(it.id, delta, 'Commande vocale', true);
+    n++;
+  });
+  voiceCmds = [];
+  save(); closeSheet(); render();
+  toast(`${n} mouvement${n>1?'s':''} enregistré${n>1?'s':''}`);
+}
+
+function importData(file){
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { const d = JSON.parse(r.result); if (!Array.isArray(d.items)) throw 0;
+      if (!confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')) return;
+      S = Object.assign(defaults(), d); save(); render(); toast('Sauvegarde importée'); }
+    catch(e){ toast('Fichier de sauvegarde invalide'); }
+  };
+  r.readAsText(file);
+}
+function resetAll(){
+  if (!confirm('Effacer tout le stock, l\'historique et les réglages ?')) return;
+  S = defaults(); save(); render(); toast('Données effacées');
+}
+
+render();
+
+/* ============ Appli installable / hors ligne ============ */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
