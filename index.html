@@ -86,6 +86,8 @@ h2{font-size:17px;margin:6px 0 10px}
 .vrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .vrow select{flex:1}
 .hbtns{display:flex;gap:2px}
+.infobar{background:#e6effa;color:var(--primary-2);border-color:#b9d0ec}
+@media (prefers-color-scheme: dark){.infobar{background:#1d2c3f;color:#9cc2ee;border-color:#2c4566}}
 </style>
 </head>
 <body>
@@ -121,6 +123,7 @@ const defaults = () => ({
   items: [],
   history: [],
   notifs: [],
+  orders: [],
   settings: {
     to: '', cc: '', tech: '',
     subject: 'Demande de réapprovisionnement camion – {date}',
@@ -198,7 +201,7 @@ function checkThreshold(it, before){
       msg:`🚫 ${it.name} est en rupture dans le camion.`});
   }
   // Retour au-dessus du seuil → on réinitialise le statut "commandé"
-  if (it.qty > it.min) it.ordered = false;
+  if (it.qty > it.min && !pendingQty(it.id)) it.ordered = false;
   S.notifs = S.notifs.slice(0, 200);
 }
 function updateBadges(){
@@ -242,6 +245,7 @@ function renderStock(){
   const lowN = lowItems().filter(i => !i.ordered).length;
   $('view').innerHTML = `
     ${safetyBanner()}
+    ${openOrders().length ? `<div class="alertbar infobar" onclick="go('order')">📦 <div class="grow"><b>${openOrders().length} commande${openOrders().length>1?'s':''}</b> en attente de réception</div>›</div>` : ''}
     ${lowN ? `<div class="alertbar" onclick="go('order')">⚠️ <div class="grow"><b>${lowN} article${lowN>1?'s':''}</b> sous le seuil — à recommander</div>›</div>` : ''}
     <div class="toolbar"><input type="search" placeholder="Rechercher (nom, réf…)" value="${esc(search)}" oninput="search=this.value;renderStockList()"><button class="round" style="flex:none;width:46px;height:46px" onclick="openVoice()" aria-label="Commande vocale">🎤</button></div>
     <div class="chips">${cats().map(c => `<button class="chip ${c===catFilter?'on':''}" onclick="catFilter='${esc(c)}';render()">${esc(c)}</button>`).join('')}</div>
@@ -259,7 +263,7 @@ function renderStockList(list){
     const cls = it.qty <= it.min ? 'low' : (it.qty <= it.min * 1.5 ? 'mid' : 'ok');
     return `<div class="card row">
       <div class="grow" onclick="openMove('${it.id}')">
-        <div class="name">${esc(it.name)}${it.ordered?'<span class="tag info">Commandé</span>':(isLow(it)?'<span class="tag bad">Bas</span>':'')}</div>
+        <div class="name">${esc(it.name)}${pendingQty(it.id)?`<span class="tag info">${pendingQty(it.id)} attendu${pendingQty(it.id)>1?'s':''}</span>`:it.ordered?'<span class="tag info">Commandé</span>':(isLow(it)?'<span class="tag bad">Bas</span>':'')}</div>
         <div class="sub">${esc(it.ref||'')}${it.ref?' · ':''}${esc(it.cat||'Divers')} · seuil ${it.min}${it.target?' / cible '+it.target:''}</div>
       </div>
       <button class="round minus" onclick="move('${it.id}',-1)">−</button>
@@ -351,14 +355,16 @@ function renderOrder(){
   const low = lowItems().sort((a,b) => (a.ordered - b.ordered) || a.name.localeCompare(b.name));
   low.forEach(it => { if (!(it.id in selection)) selection[it.id] = it.ordered ? 0 : toOrderQty(it); });
   const sel = low.filter(i => selection[i.id] > 0);
+  const oo = openOrders();
   $('view').innerHTML = `
+    ${oo.length ? `<h2>📦 En attente de réception</h2>${oo.map(orderCard).join('')}` : ''}
     <h2>Articles à recommander</h2>
     ${low.length ? low.map(it => `
       <div class="card row">
         <input type="checkbox" class="check" ${selection[it.id]>0?'checked':''} onchange="selection['${it.id}']=this.checked?${toOrderQty(it)}:0;renderOrder()">
         <div class="grow">
-          <div class="name">${esc(it.name)}${it.ordered?'<span class="tag info">Déjà demandé</span>':''}</div>
-          <div class="sub">${esc(it.ref||'')}${it.ref?' · ':''}stock ${it.qty} / seuil ${it.min}</div>
+          <div class="name">${esc(it.name)}</div>
+          <div class="sub">${esc(it.ref||'')}${it.ref?' · ':''}stock ${it.qty} / seuil ${it.min}${pendingQty(it.id)?` · <b>⏳ ${pendingQty(it.id)} attendu${pendingQty(it.id)>1?'s':''}</b>`:(it.ordered?' · <b>déjà demandé</b>':'')}</div>
         </div>
         <input class="smallnum" type="number" inputmode="numeric" min="0" value="${selection[it.id]}" onchange="selection['${it.id}']=Math.max(0,parseInt(this.value,10)||0);renderOrder()">
       </div>`).join('') : '<div class="empty">✅ Rien à recommander pour le moment.</div>'}
@@ -425,9 +431,78 @@ function sendMail(){
 function markOrdered(){
   const lines = orderLines();
   lines.forEach(({it}) => it.ordered = true);
+  // Commande en attente de réception
+  S.orders = S.orders || [];
+  S.orders.unshift({id:uid(), t:Date.now(), status:'open',
+    lines: lines.map(({it,n}) => ({itemId:it.id, name:it.name, ref:it.ref||'', qty:n, received:0}))});
+  S.orders = S.orders.slice(0, 50);
   S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`📨 Demande envoyée au responsable : ${lines.map(l=>l.it.name+' ×'+l.n).join(', ')}`});
   selection = {}; extraOrder = {};
-  save(); closeSheet(); render(); toast('Articles marqués comme commandés');
+  save(); closeSheet(); render(); toast('Commande enregistrée, en attente de réception');
+}
+
+/* ============ Réception de commande ============ */
+const openOrders = () => (S.orders || []).filter(o => o.status === 'open');
+const remaining = l => Math.max(0, l.qty - (l.received || 0));
+const fmtDay = t => new Date(t).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+function pendingQty(itemId){
+  return openOrders().reduce((s, o) => s + o.lines.filter(l => l.itemId === itemId).reduce((a, l) => a + remaining(l), 0), 0);
+}
+function orderCard(o){
+  const tot = o.lines.reduce((s,l) => s + l.qty, 0), rest = o.lines.reduce((s,l) => s + remaining(l), 0);
+  const partial = rest < tot;
+  return `<div class="card">
+    <div class="name">Commande du ${fmtDay(o.t)}${partial ? '<span class="tag bad">Partielle</span>' : ''}</div>
+    <div class="sub">${o.lines.length} article${o.lines.length>1?'s':''} · ${tot-rest}/${tot} pièce${tot>1?'s':''} reçue${tot>1?'s':''}</div>
+    <div class="sub" style="margin:8px 0;line-height:1.6">${o.lines.map(l =>
+      `${remaining(l) ? '⏳' : '✅'} ${esc(l.name)} : <b>${l.received||0}/${l.qty}</b>`).join('<br>')}</div>
+    <button class="btn primary block" onclick="openReception('${o.id}')">📦 Réceptionner</button>
+  </div>`;
+}
+function openReception(id){
+  const o = S.orders.find(x => x.id === id); if (!o) return;
+  openSheet(`<h3>Réception — commande du ${fmtDay(o.t)}</h3>
+    <div class="sub" style="margin-bottom:8px">Indique ce que tu as reçu. Par défaut, tout ce qui reste est prérempli.</div>
+    ${o.lines.map((l,k) => remaining(l) ? `<div class="card row">
+      <div class="grow"><div class="name">${esc(l.name)}</div>
+        <div class="sub">commandé ${l.qty}${l.received ? ` · déjà reçu ${l.received}` : ''}${S.items.some(i=>i.id===l.itemId) ? '' : ' · article supprimé'}</div></div>
+      <input class="smallnum rcv" id="rcv${k}" type="number" inputmode="numeric" min="0" max="${remaining(l)}" value="${remaining(l)}">
+    </div>` : '').join('')}
+    <button class="btn ok block" onclick="applyReception('${id}')">✅ Valider la réception</button>
+    <button class="btn block" onclick="document.querySelectorAll('.rcv').forEach(i=>i.value=0)">Tout mettre à 0 (pour saisir seulement ce qui est arrivé)</button>
+    <button class="btn block" onclick="closeOrder('${id}')">🗂️ Clôturer sans attendre le reste</button>
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+}
+function refreshOrdered(o){
+  o.lines.forEach(l => { const it = S.items.find(i => i.id === l.itemId); if (it) it.ordered = pendingQty(it.id) > 0; });
+}
+function applyReception(id){
+  const o = S.orders.find(x => x.id === id); if (!o) return;
+  let n = 0;
+  o.lines.forEach((l,k) => {
+    const inp = $('rcv' + k); if (!inp) return;
+    const q = Math.min(remaining(l), Math.max(0, parseInt(inp.value, 10) || 0));
+    if (!q) return;
+    l.received = (l.received || 0) + q;
+    if (S.items.some(i => i.id === l.itemId)) move(l.itemId, q, `Réception commande du ${fmtDay(o.t)}`, true);
+    n += q;
+  });
+  if (!n) return toast('Aucune quantité saisie');
+  const done = o.lines.every(l => !remaining(l));
+  if (done) { o.status = 'done'; o.doneAt = Date.now(); }
+  refreshOrdered(o);
+  S.notifs.unshift({id:uid(), t:Date.now(), read:true,
+    msg: done ? `📦 Commande du ${fmtDay(o.t)} entièrement reçue` : `📦 Réception partielle de la commande du ${fmtDay(o.t)} (${n} pièce${n>1?'s':''})`});
+  save(); closeSheet(); render();
+  toast(done ? 'Commande complète reçue ✓' : `${n} pièce${n>1?'s':''} ajoutée${n>1?'s':''} — le reste reste en attente`);
+}
+function closeOrder(id){
+  const o = S.orders.find(x => x.id === id); if (!o) return;
+  if (!confirm('Clôturer cette commande ? Les quantités non reçues ne seront plus attendues.')) return;
+  o.status = 'closed'; o.doneAt = Date.now();
+  refreshOrdered(o);
+  S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`🗂️ Commande du ${fmtDay(o.t)} clôturée (reste non reçu)`});
+  save(); closeSheet(); render(); toast('Commande clôturée');
 }
 async function copyMail(){
   const m = buildMail(); const txt = `Objet : ${m.subject}\n\n${m.body}`;
