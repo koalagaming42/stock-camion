@@ -73,6 +73,14 @@ h2{font-size:17px;margin:6px 0 10px}
 .notif.read{opacity:.55;border-left-color:var(--line)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
+.undobar{position:fixed;left:12px;right:12px;bottom:calc(var(--navh,60px) + 8px);max-width:676px;margin:0 auto;background:#222;color:#fff;border-radius:12px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:10px;z-index:31;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.3);transform:translateY(20px);opacity:0;visibility:hidden;pointer-events:none;transition:transform .25s,opacity .25s,visibility .25s}
+.undobar.show{transform:none;opacity:1;visibility:visible;pointer-events:auto}
+/* Quand la barre Annuler est affichée : la page lui laisse sa place, rien n'est caché */
+body.undo-on main{padding-bottom:calc(var(--navh,60px) + 90px + env(safe-area-inset-bottom))}
+body.undo-on .fab{bottom:calc(var(--navh,60px) + 76px)}
+body.undo-on .toast{bottom:calc(var(--navh,60px) + 130px)}
+.undobar span{flex:1}
+.undobar button{border:0;border-radius:8px;background:#ffc107;color:#222;font-weight:700;font-size:14px;padding:9px 12px}
 .alertbar{background:#fff4e0;color:#8a5a00;border:1px solid #f1d39a;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:14px;display:flex;align-items:center;gap:8px}
 @media (prefers-color-scheme: dark){.alertbar{background:#3a2c10;color:#f3c66b;border-color:#5a4418}}
 .check{width:24px;height:24px;flex:none;accent-color:var(--primary)}
@@ -80,12 +88,10 @@ h2{font-size:17px;margin:6px 0 10px}
 .preview{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:260px;overflow:auto}
 .hint{font-size:12px;color:var(--muted);margin-top:4px}
 .center{text-align:center}
-.mic{display:block;margin:14px auto 6px;width:84px;height:84px;border-radius:50%;border:0;background:var(--primary);color:#fff;font-size:36px}
-.mic.on{background:var(--bad);animation:pulse 1.2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(214,69,69,.55)}100%{box-shadow:0 0 0 20px rgba(214,69,69,0)}}
-.vrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.vrow select{flex:1}
 .hbtns{display:flex;gap:2px}
+.oddot{position:absolute;right:4px;bottom:6px;width:10px;height:10px;border-radius:50%;border:2px solid var(--primary);background:#9aa5b1}
+.oddot.ok{background:#2ecc71}.oddot.wait{background:#ffc107}.oddot.err{background:#e74c3c}
+.odstat{display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0}
 .infobar{background:#e6effa;color:var(--primary-2);border-color:#b9d0ec}
 @media (prefers-color-scheme: dark){.infobar{background:#1d2c3f;color:#9cc2ee;border-color:#2c4566}}
 </style>
@@ -95,7 +101,7 @@ h2{font-size:17px;margin:6px 0 10px}
 <header>
   <h1>🚐 Stock Camion</h1>
   <div class="hbtns">
-    <button class="bell" onclick="openVoice()" aria-label="Commande vocale">🎤</button>
+    <button class="bell" id="odBadge" onclick="go('settings')" aria-label="OneDrive" hidden>☁️<span class="oddot" id="odDot"></span></button>
     <button class="bell" onclick="openNotifs()" aria-label="Notifications">🔔<span class="badge" id="bellBadge" hidden>0</span></button>
   </div>
 </header>
@@ -113,8 +119,11 @@ h2{font-size:17px;margin:6px 0 10px}
 
 <div class="sheet-bg" id="sheetBg" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
+<div class="undobar" id="undoBar"><span id="undoMsg"></span><button onclick="undo()">↩️ Annuler</button></div>
 <input type="file" id="impGlobal" accept=".json,application/json" hidden onchange="importData(this.files[0]);this.value=''">
 
+<script src="msal-browser.min.js"></script>
+<script src="xlsx-lite.js"></script>
 <script>
 /* ============ Stockage local ============ */
 const KEY = 'stockCamion_v1';
@@ -126,6 +135,7 @@ const defaults = () => ({
   orders: [],
   settings: {
     to: '', cc: '', tech: '',
+    odClientId: 'e111e96e-5b48-406d-8b45-7dd545ad91d9', // appli « Stock Camion » déclarée chez Microsoft (non secret)
     subject: 'Demande de réapprovisionnement camion – {date}',
     intro: `Salut,\n\nAvec les dernières installs et dépannages, je commence à être juste sur certaines pièces dans le camion. Pour ne pas me retrouver bloqué en intervention pourrais-tu me commander ça s'il te plait :`,
     outro: 'Merci d\'avance.\n\nCordialement,\n{nom}'
@@ -156,6 +166,7 @@ function save(){
   try { localStorage.setItem(KEY, JSON.stringify(S)); }
   catch(e){ memoryFallback = S; }
   updateBadges();
+  try { odDirty(); } catch(e){} // synchro OneDrive (si activée)
 }
 let S = load();
 
@@ -166,7 +177,12 @@ try { localStorage.setItem('__test', '1'); localStorage.removeItem('__test'); } 
 // Demande au navigateur de ne pas effacer les données de l'appli quand il fait du ménage
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
 const BACKUP_DAYS = 7;
-const daysSinceBackup = () => S.lastBackup ? Math.floor((Date.now() - S.lastBackup) / 864e5) : null;
+const daysSinceBackup = () => {
+  // Un envoi OneDrive réussi compte comme une sauvegarde
+  let last = S.lastBackup || 0;
+  try { const m = JSON.parse(localStorage.getItem('stockCamion_onedrive')) || {}; if (m.last > last) last = m.last; } catch(e){}
+  return last ? Math.floor((Date.now() - last) / 864e5) : null;
+};
 function safetyBanner(){
   if (!storageOK) return `<div class="alertbar" style="background:#fde8e8;color:var(--bad);border-color:#f3b4b4">⛔ <div class="grow"><b>Les données ne sont pas enregistrées</b> sur ce navigateur : tout sera perdu à la fermeture. Ouvre l'appli avec <b>Chrome</b> (ou Safari sur iPhone).</div></div>`;
   const d = daysSinceBackup();
@@ -241,13 +257,13 @@ function renderStock(){
   const list = S.items
     .filter(i => catFilter === 'Tous' || (i.cat || 'Divers') === catFilter)
     .filter(i => !q || (i.name + ' ' + (i.ref||'') + ' ' + (i.cat||'')).toLowerCase().includes(q))
-    .sort((a,b) => (isLow(b) - isLow(a)) || a.name.localeCompare(b.name));
+    .sort((a,b) => (isLow(b) - isLow(a)) || a.name.localeCompare(b.name,'fr',{numeric:true}));
   const lowN = lowItems().filter(i => !i.ordered).length;
   $('view').innerHTML = `
     ${safetyBanner()}
     ${openOrders().length ? `<div class="alertbar infobar" onclick="go('order')">📦 <div class="grow"><b>${openOrders().length} commande${openOrders().length>1?'s':''}</b> en attente de réception</div>›</div>` : ''}
     ${lowN ? `<div class="alertbar" onclick="go('order')">⚠️ <div class="grow"><b>${lowN} article${lowN>1?'s':''}</b> sous le seuil — à recommander</div>›</div>` : ''}
-    <div class="toolbar"><input type="search" placeholder="Rechercher (nom, réf…)" value="${esc(search)}" oninput="search=this.value;renderStockList()"><button class="round" style="flex:none;width:46px;height:46px" onclick="openVoice()" aria-label="Commande vocale">🎤</button></div>
+    <div class="toolbar"><input type="search" placeholder="Rechercher (nom, réf…)" value="${esc(search)}" oninput="search=this.value;renderStockList()"></div>
     <div class="chips">${cats().map(c => `<button class="chip ${c===catFilter?'on':''}" onclick="catFilter='${esc(c)}';render()">${esc(c)}</button>`).join('')}</div>
     <div id="stockList"></div>`;
   renderStockList(list);
@@ -257,7 +273,7 @@ function renderStockList(list){
     const q = search.toLowerCase();
     list = S.items.filter(i => catFilter === 'Tous' || (i.cat||'Divers') === catFilter)
       .filter(i => !q || (i.name+' '+(i.ref||'')+' '+(i.cat||'')).toLowerCase().includes(q))
-      .sort((a,b) => (isLow(b)-isLow(a)) || a.name.localeCompare(b.name));
+      .sort((a,b) => (isLow(b)-isLow(a)) || a.name.localeCompare(b.name,'fr',{numeric:true}));
   }
   $('stockList').innerHTML = list.length ? list.map(it => {
     const cls = it.qty <= it.min ? 'low' : (it.qty <= it.min * 1.5 ? 'mid' : 'ok');
@@ -276,8 +292,9 @@ function renderStockList(list){
 }
 
 /* ============ Fiche article / mouvement ============ */
-function openSheet(html){ $('sheet').innerHTML = html; $('sheetBg').classList.add('show'); }
-function closeSheet(){ stopListen(); $('sheetBg').classList.remove('show'); }
+function openSheet(html){ $('sheet').innerHTML = html; $('sheetBg').classList.add('show'); $('undoBar').classList.remove('show'); }
+function sheetClosedUndo(){ if (undoSnap) $('undoBar').classList.add('show'); }
+function closeSheet(){ $('sheetBg').classList.remove('show'); sheetClosedUndo(); }
 
 function openMove(id){
   const it = S.items.find(i => i.id === id);
@@ -346,13 +363,14 @@ function saveItem(id){
 }
 function delItem(id){
   if (!confirm('Supprimer cet article du stock ?')) return;
-  S.items = S.items.filter(i => i.id !== id); save(); closeSheet(); render();
+  snapshot();
+  S.items = S.items.filter(i => i.id !== id); save(); closeSheet(); render(); offerUndo('Article supprimé');
 }
 
 /* ============ Vue À commander ============ */
 let selection = {}; // id -> qty à commander
 function renderOrder(){
-  const low = lowItems().sort((a,b) => (a.ordered - b.ordered) || a.name.localeCompare(b.name));
+  const low = lowItems().sort((a,b) => (a.ordered - b.ordered) || a.name.localeCompare(b.name,'fr',{numeric:true}));
   low.forEach(it => { if (!(it.id in selection)) selection[it.id] = it.ordered ? 0 : toOrderQty(it); });
   const sel = low.filter(i => selection[i.id] > 0);
   const oo = openOrders();
@@ -376,7 +394,7 @@ function addManual(){
   const others = S.items.filter(i => !isLow(i));
   if (!others.length) return toast('Aucun autre article dans le stock');
   openSheet(`<h3>Ajouter à la commande</h3>
-    <label>Article</label><select id="mItem">${others.sort((a,b)=>a.name.localeCompare(b.name)).map(i=>`<option value="${i.id}">${esc(i.name)} (stock ${i.qty})</option>`).join('')}</select>
+    <label>Article</label><select id="mItem">${others.sort((a,b)=>a.name.localeCompare(b.name,'fr',{numeric:true})).map(i=>`<option value="${i.id}">${esc(i.name)} (stock ${i.qty})</option>`).join('')}</select>
     <label>Quantité à commander</label><input id="mQty" type="number" inputmode="numeric" min="1" value="1">
     <button class="btn primary block" onclick="manualOk()">Ajouter</button>
     <button class="btn block" onclick="closeSheet()">Annuler</button>`);
@@ -430,6 +448,7 @@ function sendMail(){
 }
 function markOrdered(){
   const lines = orderLines();
+  snapshot();
   lines.forEach(({it}) => it.ordered = true);
   // Commande en attente de réception
   S.orders = S.orders || [];
@@ -438,8 +457,39 @@ function markOrdered(){
   S.orders = S.orders.slice(0, 50);
   S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`📨 Demande envoyée au responsable : ${lines.map(l=>l.it.name+' ×'+l.n).join(', ')}`});
   selection = {}; extraOrder = {};
-  save(); closeSheet(); render(); toast('Commande enregistrée, en attente de réception');
+  save(); closeSheet(); render(); offerUndo('Commande marquée comme envoyée');
 }
+
+/* ============ Annuler la dernière action ============ */
+// Une photo des données est prise avant chaque action importante ; « Annuler » la remet en place.
+let undoSnap = null, undoTimer = null;
+const UNDO_MS = 15000;
+function hideUndo(){ undoSnap = null; clearTimeout(undoTimer); $('undoBar').classList.remove('show'); document.body.classList.remove('undo-on'); }
+// Hauteur réelle du menu du bas (varie selon le téléphone / l'ordinateur)
+function setNavH(){ const n = document.querySelector('nav'); if (n) document.documentElement.style.setProperty('--navh', n.offsetHeight + 'px'); }
+window.addEventListener('resize', setNavH);
+function snapshot(){
+  undoSnap = {data: JSON.stringify(S), sel: JSON.stringify(selection), extra: JSON.stringify(extraOrder)};
+}
+function offerUndo(msg){
+  if (!undoSnap) return;
+  $('undoMsg').textContent = msg;
+  setNavH();
+  $('undoBar').classList.add('show'); document.body.classList.add('undo-on');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, UNDO_MS);
+}
+function undo(){
+  if (!undoSnap) return toast('Rien à annuler');
+  S = JSON.parse(undoSnap.data);
+  selection = JSON.parse(undoSnap.sel); extraOrder = JSON.parse(undoSnap.extra);
+  hideUndo();
+  save(); closeSheet(); render(); toast('↩️ Action annulée');
+}
+// Ctrl+Z sur ordinateur
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && undoSnap && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); undo(); }
+});
 
 /* ============ Réception de commande ============ */
 const openOrders = () => (S.orders || []).filter(o => o.status === 'open');
@@ -448,36 +498,88 @@ const fmtDay = t => new Date(t).toLocaleDateString('fr-FR', {day:'2-digit', mont
 function pendingQty(itemId){
   return openOrders().reduce((s, o) => s + o.lines.filter(l => l.itemId === itemId).reduce((a, l) => a + remaining(l), 0), 0);
 }
+const expandedOrders = {};
 function orderCard(o){
   const tot = o.lines.reduce((s,l) => s + l.qty, 0), rest = o.lines.reduce((s,l) => s + remaining(l), 0);
-  const partial = rest < tot;
+  const partial = rest < tot, open = expandedOrders[o.id], MAX = 5;
+  // Articles restant à recevoir d'abord
+  const lines = o.lines.slice().sort((a,b) => (!remaining(a)) - (!remaining(b)));
+  const shown = open ? lines : lines.slice(0, MAX);
   return `<div class="card">
     <div class="name">Commande du ${fmtDay(o.t)}${partial ? '<span class="tag bad">Partielle</span>' : ''}</div>
     <div class="sub">${o.lines.length} article${o.lines.length>1?'s':''} · ${tot-rest}/${tot} pièce${tot>1?'s':''} reçue${tot>1?'s':''}</div>
-    <div class="sub" style="margin:8px 0;line-height:1.6">${o.lines.map(l =>
+    <div class="grid2" style="margin-top:8px">
+      <button class="btn primary" onclick="openReception('${o.id}')">📦 Réceptionner</button>
+      ${o.lines.every(l => !l.received) ? `<button class="btn" onclick="cancelOrder('${o.id}')">↩️ Annuler la commande</button>`
+        : `<button class="btn" onclick="closeOrder('${o.id}')">🗂️ Clôturer</button>`}
+    </div>
+    <div class="sub" style="margin:10px 0 0;line-height:1.6">${shown.map(l =>
       `${remaining(l) ? '⏳' : '✅'} ${esc(l.name)} : <b>${l.received||0}/${l.qty}</b>`).join('<br>')}</div>
-    <button class="btn primary block" onclick="openReception('${o.id}')">📦 Réceptionner</button>
+    ${lines.length > MAX ? `<button class="btn block" style="padding:8px" onclick="expandedOrders['${o.id}']=!expandedOrders['${o.id}'];renderOrder()">${open ? '▴ Réduire' : `▾ Voir les ${lines.length - MAX} autres articles`}</button>` : ''}
   </div>`;
 }
 function openReception(id){
   const o = S.orders.find(x => x.id === id); if (!o) return;
+  const nothingYet = o.lines.every(l => !l.received);
   openSheet(`<h3>Réception — commande du ${fmtDay(o.t)}</h3>
-    <div class="sub" style="margin-bottom:8px">Indique ce que tu as reçu. Par défaut, tout ce qui reste est prérempli.</div>
-    ${o.lines.map((l,k) => remaining(l) ? `<div class="card row">
-      <div class="grow"><div class="name">${esc(l.name)}</div>
-        <div class="sub">commandé ${l.qty}${l.received ? ` · déjà reçu ${l.received}` : ''}${S.items.some(i=>i.id===l.itemId) ? '' : ' · article supprimé'}</div></div>
-      <input class="smallnum rcv" id="rcv${k}" type="number" inputmode="numeric" min="0" max="${remaining(l)}" value="${remaining(l)}">
+    <div class="sub" style="margin-bottom:8px">Coche chaque article reçu. La quantité se remplit toute seule : corrige-la si tu en as reçu moins.</div>
+    ${o.lines.map((l,k) => remaining(l) ? `<div class="card row rcvline" id="rcvl${k}">
+      <input type="checkbox" class="check rcvchk" id="rcvc${k}" onchange="rcvCheck(${k},${remaining(l)})">
+      <label for="rcvc${k}" class="grow" style="margin:0;font-size:inherit;color:inherit;font-weight:normal">
+        <div class="name">${esc(l.name)}</div>
+        <div class="sub">commandé ${l.qty}${l.received ? ` · déjà reçu ${l.received}` : ''}${S.items.some(i=>i.id===l.itemId) ? '' : ' · article supprimé'}</div>
+      </label>
+      <input class="smallnum rcv" id="rcv${k}" type="number" inputmode="numeric" min="0" max="${remaining(l)}" value="0" oninput="rcvQty(${k},${remaining(l)})">
     </div>` : '').join('')}
-    <button class="btn ok block" onclick="applyReception('${id}')">✅ Valider la réception</button>
-    <button class="btn block" onclick="document.querySelectorAll('.rcv').forEach(i=>i.value=0)">Tout mettre à 0 (pour saisir seulement ce qui est arrivé)</button>
+    <button class="btn block" onclick="rcvAll(true)">☑️ Tout cocher (tout est arrivé)</button>
+    <button class="btn ok block" id="rcvOk" onclick="applyReception('${id}')">✅ Valider la réception</button>
     <button class="btn block" onclick="closeOrder('${id}')">🗂️ Clôturer sans attendre le reste</button>
-    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+    ${nothingYet ? `<button class="btn block" onclick="cancelOrder('${id}')">↩️ Annuler cette commande (envoyée par erreur)</button>` : ''}
+    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+  rcvCount();
+}
+function rcvCheck(k, max){
+  const c = $('rcvc'+k), q = $('rcv'+k);
+  q.value = c.checked ? (parseInt(q.value,10) > 0 ? q.value : max) : 0;
+  rcvCount();
+}
+function rcvQty(k, max){
+  const q = $('rcv'+k); let v = parseInt(q.value,10) || 0;
+  if (v > max) { v = max; q.value = max; }
+  $('rcvc'+k).checked = v > 0;
+  rcvCount();
+}
+function rcvAll(on){
+  document.querySelectorAll('.rcvchk').forEach(c => { c.checked = on; c.dispatchEvent(new Event('change')); });
+}
+function rcvCount(){
+  let n = 0, a = 0;
+  document.querySelectorAll('.rcv').forEach(i => { const v = parseInt(i.value,10) || 0; if (v) { n += v; a++; } });
+  document.querySelectorAll('.rcvline').forEach(l => l.style.borderColor = l.querySelector('.rcvchk').checked ? 'var(--ok)' : '');
+  const b = $('rcvOk'); if (!b) return;
+  b.textContent = a ? `✅ Valider : ${a} article${a>1?'s':''} (${n} pièce${n>1?'s':''})` : '✅ Valider la réception';
+  b.disabled = !a; b.style.opacity = a ? '' : '.5';
+}
+function cancelOrder(id){
+  const o = S.orders.find(x => x.id === id); if (!o || o.lines.some(l => l.received)) return;
+  snapshot();
+  S.orders = S.orders.filter(x => x !== o);
+  refreshOrdered(o);
+  S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`↩️ Commande du ${fmtDay(o.t)} annulée`});
+  save(); closeSheet(); render();
+  offerUndo('Commande annulée');
 }
 function refreshOrdered(o){
-  o.lines.forEach(l => { const it = S.items.find(i => i.id === l.itemId); if (it) it.ordered = pendingQty(it.id) > 0; });
+  o.lines.forEach(l => {
+    const it = S.items.find(i => i.id === l.itemId); if (!it) return;
+    it.ordered = pendingQty(it.id) > 0;
+    if (!it.ordered) delete selection[it.id]; // redevient proposé dans « À commander »
+  });
 }
 function applyReception(id){
   const o = S.orders.find(x => x.id === id); if (!o) return;
+  if (!document.querySelector('.rcv') || ![...document.querySelectorAll('.rcv')].some(i => parseInt(i.value,10) > 0)) return toast('Coche au moins un article reçu');
+  snapshot();
   let n = 0;
   o.lines.forEach((l,k) => {
     const inp = $('rcv' + k); if (!inp) return;
@@ -494,15 +596,16 @@ function applyReception(id){
   S.notifs.unshift({id:uid(), t:Date.now(), read:true,
     msg: done ? `📦 Commande du ${fmtDay(o.t)} entièrement reçue` : `📦 Réception partielle de la commande du ${fmtDay(o.t)} (${n} pièce${n>1?'s':''})`});
   save(); closeSheet(); render();
-  toast(done ? 'Commande complète reçue ✓' : `${n} pièce${n>1?'s':''} ajoutée${n>1?'s':''} — le reste reste en attente`);
+  offerUndo(done ? 'Commande complète reçue ✓' : `${n} pièce${n>1?'s':''} reçue${n>1?'s':''} — le reste reste en attente`);
 }
 function closeOrder(id){
   const o = S.orders.find(x => x.id === id); if (!o) return;
   if (!confirm('Clôturer cette commande ? Les quantités non reçues ne seront plus attendues.')) return;
+  snapshot();
   o.status = 'closed'; o.doneAt = Date.now();
   refreshOrdered(o);
   S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`🗂️ Commande du ${fmtDay(o.t)} clôturée (reste non reçu)`});
-  save(); closeSheet(); render(); toast('Commande clôturée');
+  save(); closeSheet(); render(); offerUndo('Commande clôturée');
 }
 async function copyMail(){
   const m = buildMail(); const txt = `Objet : ${m.subject}\n\n${m.body}`;
@@ -556,9 +659,11 @@ function renderSettings(){
       <div class="hint">Raccourcis : <b>{date}</b> = date du jour, <b>{nom}</b> = ton nom. La liste du matériel s'insère automatiquement entre le début et la fin.</div>
       <button class="btn primary block" onclick="saveSettings()">Enregistrer</button>
     </div>
+    <h2>☁️ OneDrive (synchronisation automatique)</h2>
+    <div class="card" id="odCard">${odSettingsHtml()}</div>
     <h2>Sauvegarde</h2>
     <div class="card">
-      <div class="sub">Les données sont stockées uniquement sur ce téléphone. Fais une sauvegarde de temps en temps (changement de téléphone, nettoyage du navigateur…).</div>
+      <div class="sub">Les données sont stockées sur ce téléphone${odReady() ? ', et copiées automatiquement sur ton OneDrive' : ''}. ${odReady() ? 'Tu peux aussi garder une sauvegarde manuelle.' : 'Fais une sauvegarde de temps en temps (changement de téléphone, nettoyage du navigateur…), ou connecte OneDrive ci-dessus.'}</div>
       <div class="sub" style="margin-top:6px">Dernière sauvegarde : <b>${S.lastBackup ? fmtDate(S.lastBackup) : 'jamais'}</b> · Enregistrement sur ce téléphone : <b style="color:var(${storageOK?'--ok':'--bad'})">${storageOK ? 'actif ✓' : 'impossible ✗'}</b></div>
       <button class="btn block" onclick="exportData()">⬇️ Exporter une sauvegarde</button>
       <button class="btn block" onclick="$('imp').click()">⬆️ Importer une sauvegarde</button>
@@ -567,6 +672,7 @@ function renderSettings(){
     <h2>Inventaire (CSV / Excel)</h2>
     <div class="card">
       <div class="sub">Pour échanger ton inventaire avec Excel ou un collègue. Colonnes : Désignation ; Référence ; Catégorie ; Stock ; Seuil ; Cible. Dans Excel, enregistre au format <b>CSV (séparateur : point-virgule)</b>.</div>
+      <button class="btn block" onclick="exportXlsx()">📊 Exporter en Excel (.xlsx, mis en forme)</button>
       <button class="btn primary block" onclick="shareInventory()">🔄 Envoyer l'inventaire à jour (OneDrive, Drive, mail…)</button>
       <div class="hint">Toujours le même nom de fichier (inventaire-camion.csv) : dans OneDrive ou Drive, choisis « Remplacer » pour garder un seul fichier à jour.</div>
       <button class="btn block" onclick="exportCSV()">📤 Exporter l'inventaire (fichier daté)</button>
@@ -606,7 +712,7 @@ async function shareInventory(){
 }
 function inventoryCSV(){
   const rows = [['Désignation','Référence','Catégorie','Stock','Seuil','Cible','Statut']]
-    .concat(S.items.slice().sort((a,b)=>(a.cat||'').localeCompare(b.cat||'')||a.name.localeCompare(b.name))
+    .concat(S.items.slice()
       .map(i => [i.name,i.ref,i.cat,i.qty,i.min,i.target,i.ordered?'Commandé':(isLow(i)?'À commander':'OK')]));
   return'\ufeff'+rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\n');
 }
@@ -644,7 +750,11 @@ function importCSV(file){
   if (!file) return;
   const r = new FileReader();
   r.onload = () => {
-    const rows = parseCSV(r.result);
+    // Excel enregistre souvent en encodage Windows : on essaie UTF-8, sinon Windows-1252
+    let text;
+    try { text = new TextDecoder('utf-8', {fatal: true}).decode(r.result); }
+    catch(e) { text = new TextDecoder('windows-1252').decode(r.result); }
+    const rows = parseCSV(text);
     if (!rows.length) return toast('Fichier vide');
     // Détection des colonnes par l'en-tête
     const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -676,11 +786,12 @@ function importCSV(file){
       <div class="hint">Supprime les articles actuels et les remplace par ceux du fichier. L'historique est conservé.</div>
       <button class="btn block" onclick="pendingImport=null;closeSheet()">Annuler</button>`);
   };
-  r.readAsText(file, 'UTF-8');
+  r.readAsArrayBuffer(file);
 }
 function applyImport(mode){
   const items = pendingImport; if (!items) return;
   if (mode === 'replace' && !confirm('Remplacer tout le stock actuel par ce fichier ?')) return;
+  snapshot();
   if (mode === 'replace') S.items = [];
   let added = 0, updated = 0;
   const key = s => (s||'').trim().toLowerCase();
@@ -705,187 +816,185 @@ function applyImport(mode){
     }
   });
   pendingImport = null; save(); closeSheet(); render();
-  toast(`${added} ajouté(s), ${updated} mis à jour`);
+  offerUndo(`Import : ${added} ajouté(s), ${updated} mis à jour`);
 }
 
-/* ============ Commande vocale ============ */
-const NUMS = {un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,treize:13,
-  quatorze:14,quinze:15,seize:16,vingt:20,trente:30,quarante:40,cinquante:50,soixante:60,cent:100};
-const V_OUT = ['retire','retirer','retirez','enleve','enlever','enlevez','prends','prend','pris','prendre','sors','sortir','sorti',
-  'utilise','utiliser','pose','poser','installe','consomme','moins','ote','oter','remplace'];
-const V_IN = ['ajoute','ajouter','ajoutez','rajoute','rajouter','plus','recu','recois','range','ranger','remis','remets','mets',
-  'met','rentre','rentrer','recupere','achete','livre'];
-const V_SET = ['reste','restent','inventaire','compte','corrige'];
-const UNITS = ['v','volt','volts','ah','mah','mm','cm','m','metre','metres','w','watt','watts','fils','paire','paires','go','gb','pouce','pouces','kg'];
-const STOP = ['de','des','du','la','le','les','l','d','j','je','ai','me','il','ils','en','y','dans','camion','piece','pieces','stp','svp',
-  'te','plait','merci','pour','au','aux','avec','sur','on','nous','vous','tu','qu','que','encore','aussi','bien','ok','alors','donc','voila'];
-const ACT_LABEL = {out:'− Retirer', in:'+ Ajouter', set:'= Mettre à'};
 
-function vnorm(s){
-  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
-    .replace(/[,;.!?]/g,' , ').replace(/['’\-_/]/g,' ').replace(/[^a-z0-9, ]/g,' ')
-    .replace(/\b(\d+) (v|ah|mah|mm|w)\b/g,'$1$2').replace(/\s+/g,' ').trim();
-}
-const stem = w => w.length > 3 ? w.replace(/(s|x)$/,'') : w;
-const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+/* ============ OneDrive (compte Microsoft personnel) ============ */
+// L'appli n'a accès qu'à SON dossier : OneDrive › Applications › <nom de l'appli>.
+// Après chaque modification, elle y envoie stock-camion.json, stock-camion.csv et stock-camion.xlsx.
+const OD_SCOPES = ['Files.ReadWrite.AppFolder'];
+const OD_KEY = 'stockCamion_onedrive';
+const GRAPH = 'https://graph.microsoft.com/v1.0/me/drive/special/approot';
+const OD = {app: null, account: null, busy: false, again: false, timer: null, state: 'off', msg: '', folderUrl: ''};
+let odMeta = (() => { try { return JSON.parse(localStorage.getItem(OD_KEY)) || {}; } catch(e){ return {}; } })();
+// odMeta : {pending, last, auto, err}
+if (odMeta.auto === undefined) odMeta.auto = true;
+function odSaveMeta(){ try { localStorage.setItem(OD_KEY, JSON.stringify(odMeta)); } catch(e){} }
+const odClientId = () => (S.settings.odClientId || '').trim();
+const odReady = () => !!(OD.app && OD.account);
+const odRedirect = () => location.origin + location.pathname.replace(/index\.html$/, '');
 
-function parseVoice(text){
-  const toks = vnorm(text).split(' ').filter(Boolean);
-  const cmds = []; let cur = null, last = 'out';
-  const push = () => { if (cur && cur.words.length) cmds.push(cur); cur = null; };
-  const start = a => { cur = {action: a || last, qty: null, words: []}; };
-  for (let i = 0; i < toks.length; i++) {
-    const t = toks[i];
-    if (t === ',' || t === 'et' || t === 'puis' || t === 'ensuite') { if (cur && cur.words.length) push(); continue; }
-    const verb = V_OUT.includes(t) ? 'out' : V_IN.includes(t) ? 'in' : V_SET.includes(t) ? 'set' : null;
-    if (verb) { if (cur && cur.words.length) push(); if (!cur) start(verb); else cur.action = verb; last = verb; continue; }
-    // Nombre (chiffres ou en lettres, ex. « vingt cinq »)
-    let n = null, j = i;
-    if (/^\d+$/.test(t)) n = parseInt(t, 10);
-    else if (t in NUMS) { n = 0; while (j < toks.length && toks[j] in NUMS) { n += NUMS[toks[j]]; j++; } j--; }
-    if (n !== null) {
-      const isSet = toks[i-1] === 'a';
-      // « batterie 12 volts » → le nombre fait partie du nom
-      if (cur && cur.words.length && UNITS.includes(toks[j+1])) { cur.words.push(n + toks[j+1]); i = j + 1; continue; }
-      if (cur && cur.words.length && isSet) { cur.action = 'set'; cur.qty = n; i = j; continue; }
-      if (cur && (cur.words.length || cur.qty !== null)) push();
-      if (!cur) start();
-      cur.qty = n; if (isSet) cur.action = 'set';
-      i = j; continue;
-    }
-    if (STOP.includes(t) || t === 'a') continue;
-    if (!cur) start();
-    cur.words.push(t);
-  }
-  push();
-  return cmds.map(c => ({action: c.action, qty: c.qty ?? 1, label: c.words.join(' '), itemId: matchItem(c.words)}));
-}
-function matchItem(words){
-  const ws = words.map(stem);
-  let best = null, bestScore = 0;
-  S.items.forEach(it => {
-    const toks = vnorm(it.name + ' ' + (it.ref||'')).split(' ').filter(t => t && t !== ',' && !STOP.includes(t)).map(stem);
-    let s = 0;
-    ws.forEach(w => {
-      if (toks.includes(w)) s += 1;
-      else if (w.length >= 4 && toks.some(t => t.length >= 4 && (t.startsWith(w) || w.startsWith(t)))) s += 0.6;
+async function odInit(){
+  odUi();
+  if (!window.msal || !odClientId()) return;
+  if (!/^[0-9a-f-]{36}$/i.test(odClientId())) { odSet('err', 'Identifiant d\'application invalide.'); return; }
+  if (!location.protocol.startsWith('http')) { odSet('err', 'La connexion OneDrive ne marche que depuis l\'adresse en ligne de l\'appli (github.io).'); return; }
+  try {
+    OD.app = new msal.PublicClientApplication({
+      auth: {clientId: odClientId(), authority: 'https://login.microsoftonline.com/consumers', redirectUri: odRedirect()},
+      cache: {cacheLocation: 'localStorage'}
     });
-    if (s > 0) s += 0.2 * (s / Math.max(toks.length, 1)); // privilégie le nom le plus précis
-    if (s > bestScore) { bestScore = s; best = it; }
-  });
-  return bestScore >= 0.6 ? best.id : '__new';
+    await OD.app.initialize();
+    const r = await OD.app.handleRedirectPromise();
+    if (r && r.account) { OD.app.setActiveAccount(r.account); toast('✅ Connecté à OneDrive'); odMeta.pending = true; odSaveMeta(); }
+    const acc = OD.app.getActiveAccount() || OD.app.getAllAccounts()[0];
+    if (acc) { OD.app.setActiveAccount(acc); OD.account = acc; }
+    if (location.hash.includes('code=') || location.hash.includes('error=')) history.replaceState(null, '', location.pathname + location.search);
+  } catch(e) {
+    odSet('err', 'Connexion impossible : ' + odErrText(e));
+    return;
+  }
+  if (odReady()) { odSet(odMeta.pending ? 'wait' : 'ok'); if (odMeta.pending && odMeta.auto) odSchedule(800); }
+  else odSet('off');
 }
+function odErrText(e){
+  const m = (e && (e.errorMessage || e.message || e.errorCode)) || String(e);
+  if (/AADSTS700016|application.*not found/i.test(m)) return 'identifiant d\'application inconnu chez Microsoft (vérifie le copier-coller).';
+  if (/AADSTS50011|redirect/i.test(m)) return 'adresse de retour incorrecte dans la déclaration Microsoft (doit être ' + odRedirect() + ').';
+  if (/AADSTS9002326|cross-origin|Single-Page/i.test(m)) return 'la plateforme doit être « Application monopage (SPA) » dans la déclaration Microsoft.';
+  if (/user_cancelled|access_denied|consent/i.test(m)) return 'connexion annulée.';
+  return m.slice(0, 160);
+}
+function odLogin(){
+  if (!OD.app) return toast('Enregistre d\'abord l\'identifiant de l\'application');
+  odSaveMeta();
+  OD.app.loginRedirect({scopes: OD_SCOPES, prompt: 'select_account'}).catch(e => odSet('err', odErrText(e)));
+}
+async function odLogout(){
+  if (!confirm('Déconnecter OneDrive ? Tes fichiers déjà envoyés restent sur ton OneDrive.')) return;
+  try { if (OD.app && OD.account) await OD.app.clearCache({account: OD.account}); } catch(e){}
+  OD.account = null; odMeta = {auto: odMeta.auto}; odSaveMeta(); odSet('off'); render();
+}
+async function odToken(){
+  try { return (await OD.app.acquireTokenSilent({scopes: OD_SCOPES, account: OD.account})).accessToken; }
+  catch(e) {
+    if (e instanceof msal.InteractionRequiredAuthError) { odSet('err', 'Session expirée : appuie sur « Se reconnecter ».', true); }
+    throw e;
+  }
+}
+function odSet(state, msg, needLogin){
+  OD.state = state; OD.msg = msg || ''; OD.needLogin = !!needLogin;
+  odMeta.err = state === 'err' ? OD.msg : ''; odSaveMeta(); odUi();
+}
+function odUi(){
+  const b = $('odBadge'), d = $('odDot');
+  if (b) { b.hidden = !odClientId(); d.className = 'oddot ' + ({ok:'ok', wait:'wait', busy:'wait', err:'err'}[OD.state] || ''); }
+  if ($('odCard')) $('odCard').innerHTML = odSettingsHtml();
+}
+function odDirty(){
+  if (!odClientId()) return;
+  odMeta.pending = true; odSaveMeta();
+  if (odReady() && odMeta.auto) { if (OD.state !== 'busy') odSet('wait'); odSchedule(4000); }
+}
+function odSchedule(ms){ clearTimeout(OD.timer); OD.timer = setTimeout(() => odSync(), ms); }
+async function odPut(token, name, body, type){
+  const r = await fetch(`${GRAPH}:/${encodeURIComponent(name)}:/content`, {method: 'PUT', headers: {Authorization: 'Bearer ' + token, 'Content-Type': type}, body});
+  if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error(`OneDrive a refusé ${name} (${r.status}) ${t.slice(0, 120)}`); }
+  return r.json();
+}
+async function odSync(manual){
+  if (!odReady()) return manual && toast('Connecte d\'abord OneDrive');
+  if (OD.busy) { OD.again = true; return; }
+  if (!navigator.onLine) { odSet('wait', 'Hors ligne : envoi dès le retour du réseau.'); return manual && toast('Hors ligne : envoi dès le retour du réseau'); }
+  OD.busy = true; OD.again = false; odSet('busy', 'Envoi en cours…');
+  try {
+    const token = await odToken();
+    const data = JSON.stringify(Object.assign({}, S, {exportedAt: new Date().toISOString()}), null, 1);
+    const xlsx = XlsxLite.stockWorkbook(sortedForExport(), S.history, {date: new Date().toLocaleString('fr-FR'), pending: it => pendingQty(it.id)});
+    await odPut(token, 'stock-camion.json', data, 'application/json');
+    await odPut(token, 'stock-camion.csv', inventoryCSV(), 'text/csv');
+    const x = await odPut(token, 'stock-camion.xlsx', xlsx, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    if (x && x.parentReference) OD.folderUrl = '';
+    odMeta.pending = OD.again; odMeta.last = Date.now(); odSaveMeta();
+    odSet(OD.again ? 'wait' : 'ok');
+    if (manual) toast('☁️ OneDrive à jour');
+  } catch(e) {
+    odMeta.pending = true; odSaveMeta(); // sera renvoyé au prochain essai
+    if (OD.state !== 'err' || !OD.needLogin) odSet('err', !navigator.onLine ? 'Hors ligne : envoi dès le retour du réseau.' : odErrText(e), OD.needLogin);
+    if (!OD.needLogin) odSchedule(60000); // nouvel essai dans 1 min
+  } finally {
+    OD.busy = false;
+    if (OD.again && odMeta.auto) odSchedule(1500);
+  }
+}
+async function odRestore(){
+  if (!odReady()) return toast('Connecte d\'abord OneDrive');
+  try {
+    const token = await odToken();
+    const r = await fetch(`${GRAPH}:/stock-camion.json`, {headers: {Authorization: 'Bearer ' + token}});
+    if (r.status === 404) return toast('Aucune sauvegarde trouvée sur OneDrive');
+    if (!r.ok) throw new Error('OneDrive ' + r.status);
+    const meta = await r.json();
+    const d = await (await fetch(meta['@microsoft.graph.downloadUrl'])).json();
+    if (!Array.isArray(d.items)) throw new Error('fichier invalide');
+    const when = d.exportedAt ? new Date(d.exportedAt).toLocaleString('fr-FR') : fmtDate(Date.parse(meta.lastModifiedDateTime));
+    if (!confirm(`Remplacer les données de ce téléphone par la sauvegarde OneDrive du ${when} ?\n(${d.items.length} articles)`)) return;
+    snapshot();
+    delete d.exportedAt;
+    S = Object.assign(defaults(), d); save(); render(); offerUndo('Données récupérées depuis OneDrive');
+  } catch(e) { toast('Récupération impossible : ' + odErrText(e)); }
+}
+async function odOpenFolder(){
+  try {
+    const token = await odToken();
+    const r = await fetch(GRAPH, {headers: {Authorization: 'Bearer ' + token}});
+    const j = await r.json();
+    if (j.webUrl) window.open(j.webUrl, '_blank'); else throw new Error('dossier introuvable');
+  } catch(e) { toast('Impossible d\'ouvrir le dossier : ' + odErrText(e)); }
+}
+function odSaveClientId(){
+  const v = ($('odClient').value || '').trim();
+  if (v && !/^[0-9a-f-]{36}$/i.test(v)) return toast('Identifiant invalide : il ressemble à 1a2b3c4d-…-…');
+  S.settings.odClientId = v; save(); OD.app = null; OD.account = null; odInit(); toast(v ? 'Identifiant enregistré' : 'Identifiant effacé');
+}
+function odToggleAuto(on){ odMeta.auto = on; odSaveMeta(); if (on) odDirty(); odUi(); }
+function odSettingsHtml(){
+  const cid = odClientId();
+  const dot = s => `<span class="oddot ${s}" style="position:static;display:inline-block;border-color:var(--card)"></span>`;
+  if (!cid) return `
+    <div class="sub">Envoie automatiquement ton stock (Excel, CSV et sauvegarde) sur <b>ton OneDrive personnel</b> après chaque modification. L'appli n'a accès qu'à un seul dossier : <b>Applications › Stock Camion</b>.</div>
+    <label>Identifiant de l'application (Client ID)</label>
+    <input id="odClient" placeholder="ex. 1a2b3c4d-5e6f-7a8b-9c0d-112233445566" autocomplete="off">
+    <button class="btn primary block" onclick="odSaveClientId()">Enregistrer l'identifiant</button>
+    <div class="hint">Cet identifiant s'obtient une seule fois en déclarant l'appli chez Microsoft (gratuit).</div>`;
+  if (!odReady()) return `
+    <div class="odstat">${dot(OD.state === 'err' ? 'err' : '')} <span>${OD.state === 'err' ? esc(OD.msg) : 'Non connecté'}</span></div>
+    <button class="btn primary block" onclick="odLogin()">🔑 Se connecter à mon compte Microsoft</button>
+    <div class="hint">Une page Microsoft s'ouvre : connecte-toi avec ton compte <b>personnel</b> (outlook / hotmail) et accepte l'accès au dossier de l'appli.</div>
+    <details style="margin-top:10px"><summary class="sub">Identifiant de l'application</summary>
+      <input id="odClient" value="${esc(cid)}" style="margin-top:6px"><button class="btn block" onclick="odSaveClientId()">Modifier</button></details>`;
+  const st = {ok: ['ok', 'À jour'], wait: ['wait', 'Modifications en attente d\'envoi'], busy: ['wait', 'Envoi en cours…'], err: ['err', OD.msg], off: ['', '']}[OD.state] || ['', ''];
+  return `
+    <div class="odstat">${dot(st[0])} <b>${esc(st[1] || '')}</b></div>
+    ${OD.state === 'wait' && OD.msg ? `<div class="sub">${esc(OD.msg)}</div>` : ''}
+    <div class="sub">Compte : <b>${esc(OD.account.username || '')}</b><br>Dernier envoi : <b>${odMeta.last ? fmtDate(odMeta.last) : 'jamais'}</b></div>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px;color:var(--text)">
+      <input type="checkbox" class="check" ${odMeta.auto ? 'checked' : ''} onchange="odToggleAuto(this.checked)"> Envoi automatique après chaque modification</label>
+    ${OD.needLogin ? `<button class="btn primary block" onclick="odLogin()">🔑 Se reconnecter</button>` : ''}
+    <button class="btn block" onclick="odSync(true)">🔄 Synchroniser maintenant</button>
+    <button class="btn block" onclick="odOpenFolder()">📂 Ouvrir le dossier OneDrive</button>
+    <button class="btn block" onclick="odRestore()">📥 Récupérer mes données depuis OneDrive</button>
+    <div class="hint">Fichiers envoyés : <b>stock-camion.xlsx</b> (Excel mis en forme + historique), <b>stock-camion.csv</b> et <b>stock-camion.json</b> (sauvegarde complète). L'appli reste la référence : une modification faite dans l'Excel sur OneDrive sera remplacée au prochain envoi.</div>
+    <button class="btn block" onclick="odLogout()">Déconnecter OneDrive</button>`;
+}
+window.addEventListener('online', () => { if (odReady() && odMeta.pending && odMeta.auto) odSchedule(1500); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && odReady() && odMeta.pending && odMeta.auto) odSchedule(1500); });
 
-let rec = null, voiceCmds = [];
-const SR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
-function openVoice(){
-  const ok = !!SR();
-  openSheet(`<h3>🎤 Commande vocale</h3>
-    <div class="sub">Exemples : « retire 2 détecteurs et 1 sirène » · « ajoute 5 batteries 12V » · « il reste 3 claviers » · « j'ai pris 4 contacts et une sirène »</div>
-    ${ok ? `<button class="mic" id="micBtn" onclick="toggleListen()">🎤</button><div class="sub center" id="micState">Appuie et parle, puis dis <b>« STOP »</b></div>`
-         : `<div class="hint" style="margin-top:10px">La dictée intégrée n'est pas disponible sur ce navigateur : appuie dans le champ ci-dessous puis sur le 🎤 de ton clavier.</div>`}
-    <label>Texte compris (modifiable)</label>
-    <textarea id="vText" placeholder="ex. retire 2 détecteurs et ajoute 4 batteries"></textarea>
-    <button class="btn primary block" onclick="analyseVoice()">Analyser</button>
-    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
-  if (ok) toggleListen();
-}
-function setMic(on){
-  if ($('micBtn')) $('micBtn').classList.toggle('on', on);
-  if ($('micState')) $('micState').innerHTML = on ? 'J\'écoute… dis <b>« STOP »</b> quand tu as fini' : 'Appuie et parle, puis dis <b>« STOP »</b>';
-}
-// L'écoute continue jusqu'à ce que tu dises « STOP » (ou que tu appuies sur le micro).
-let keepListening = false, listenStartedAt = 0;
-const MAX_LISTEN_MS = 3 * 60 * 1000; // sécurité : arrêt automatique après 3 min
-function toggleListen(){
-  if (!SR()) return;
-  if (rec || keepListening) { keepListening = false; if (rec) rec.stop(); return; } // appui = arrêt manuel
-  keepListening = true; listenStartedAt = Date.now();
-  listenOnce();
-}
-function listenOnce(){
-  const R = SR();
-  const base = $('vText') && $('vText').value.trim() ? $('vText').value.trim() + ', ' : '';
-  let finalTxt = '';
-  rec = new R(); rec.lang = 'fr-FR'; rec.interimResults = true; rec.continuous = true;
-  rec.onresult = e => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const r = e.results[i];
-      if (r.isFinal) finalTxt += r[0].transcript + ' '; else interim += r[0].transcript;
-    }
-    let full = base + finalTxt + interim;
-    const m = full.match(/\bstop\b/i);
-    if (m) { // mot-clé STOP → on coupe tout ce qui suit et on arrête
-      full = full.slice(0, m.index);
-      keepListening = false;
-      if ($('vText')) $('vText').value = full.replace(/[,\s]+$/, '').trim();
-      try { rec.stop(); } catch(err){}
-      return;
-    }
-    if ($('vText')) $('vText').value = full.trim();
-  };
-  rec.onerror = e => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { keepListening = false; toast('Micro refusé : utilise le 🎤 du clavier'); }
-    else if (e.error === 'network') { keepListening = false; toast('Dictée indisponible sans réseau : utilise le 🎤 du clavier'); }
-    // « no-speech » (silence) : on continue d'écouter
-  };
-  rec.onend = () => {
-    rec = null;
-    if (keepListening && Date.now() - listenStartedAt > MAX_LISTEN_MS) { keepListening = false; toast('Écoute arrêtée automatiquement'); }
-    // Le téléphone coupe parfois le micro après un silence : on relance tant que STOP n'a pas été dit
-    if (keepListening && $('vText')) { try { listenOnce(); return; } catch(err){ keepListening = false; } }
-    setMic(false);
-    if ($('vText') && $('vText').value.trim()) analyseVoice();
-  };
-  try { rec.start(); setMic(true); } catch(e) { rec = null; keepListening = false; setMic(false); }
-}
-function stopListen(){ keepListening = false; if (rec) { rec.onend = null; try { rec.abort(); } catch(e){} rec = null; } }
-function analyseVoice(){
-  const text = ($('vText') ? $('vText').value : '').trim();
-  if (!text) return toast('Dis ou écris ce que tu veux faire');
-  voiceCmds = parseVoice(text);
-  if (!voiceCmds.length) return toast('Je n\'ai pas compris, reformule');
-  showVoiceConfirm();
-}
-function showVoiceConfirm(){
-  if (!voiceCmds.length) { closeSheet(); return; }
-  const items = S.items.slice().sort((a,b) => a.name.localeCompare(b.name));
-  openSheet(`<h3>Vérifie avant de valider</h3>
-    <div class="sub" style="margin-bottom:8px">Tu peux corriger l'action, la quantité ou l'article.</div>
-    ${voiceCmds.map((c,k) => `<div class="card">
-      <div class="vrow">
-        <select onchange="voiceCmds[${k}].action=this.value">${Object.entries(ACT_LABEL).map(([v,l]) => `<option value="${v}" ${c.action===v?'selected':''}>${l}</option>`).join('')}</select>
-        <input class="smallnum" type="number" inputmode="numeric" min="0" value="${c.qty}" onchange="voiceCmds[${k}].qty=this.value">
-        <button class="round" style="flex:none" onclick="voiceCmds.splice(${k},1);showVoiceConfirm()" aria-label="Supprimer">✕</button>
-      </div>
-      <select onchange="voiceCmds[${k}].itemId=this.value">
-        <option value="__new" ${c.itemId==='__new'?'selected':''}>➕ Nouvel article : ${esc(cap(c.label))}</option>
-        ${items.map(i => `<option value="${i.id}" ${c.itemId===i.id?'selected':''}>${esc(i.name)} (stock ${i.qty})</option>`).join('')}
-      </select>
-      <div class="hint">Entendu : « ${esc(c.label)} »${c.itemId==='__new'?' — aucun article correspondant trouvé':''}</div>
-    </div>`).join('')}
-    <button class="btn primary block" onclick="applyVoice()">✅ Valider (${voiceCmds.length})</button>
-    <button class="btn block" onclick="openVoice()">🎤 Recommencer</button>
-    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
-}
-function applyVoice(){
-  let n = 0;
-  voiceCmds.forEach(c => {
-    const q = Math.max(0, parseInt(c.qty, 10) || 0);
-    let it = S.items.find(i => i.id === c.itemId);
-    if (!it) {
-      if (!c.label) return;
-      it = {id:uid(), ordered:false, name:cap(c.label), ref:'', cat:'Divers', qty:0, min:1, target:''};
-      S.items.push(it);
-    }
-    const delta = c.action === 'set' ? q - it.qty : (c.action === 'in' ? q : -q);
-    move(it.id, delta, 'Commande vocale', true);
-    n++;
-  });
-  voiceCmds = [];
-  save(); closeSheet(); render();
-  toast(`${n} mouvement${n>1?'s':''} enregistré${n>1?'s':''}`);
+function sortedForExport(){ return S.items.slice(); } // même ordre que ton inventaire
+function exportXlsx(){
+  const x = XlsxLite.stockWorkbook(sortedForExport(), S.history, {date: new Date().toLocaleString('fr-FR'), pending: it => pendingQty(it.id)});
+  download(`stock-camion-${new Date().toISOString().slice(0,10)}.xlsx`, x, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
 
 function importData(file){
@@ -894,7 +1003,7 @@ function importData(file){
   r.onload = () => {
     try { const d = JSON.parse(r.result); if (!Array.isArray(d.items)) throw 0;
       if (!confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')) return;
-      S = Object.assign(defaults(), d); save(); render(); toast('Sauvegarde importée'); }
+      snapshot(); S = Object.assign(defaults(), d); save(); render(); offerUndo('Sauvegarde importée'); }
     catch(e){ toast('Fichier de sauvegarde invalide'); }
   };
   r.readAsText(file);
@@ -905,6 +1014,7 @@ function resetAll(){
 }
 
 render();
+odInit();
 
 /* ============ Appli installable / hors ligne ============ */
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
