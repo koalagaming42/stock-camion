@@ -957,30 +957,40 @@ async function odRemoteData(token){
   d.__modified = meta.lastModifiedDateTime;
   return d;
 }
-let odFound = [];
+let odFound = [], odSeen = [];
 async function odRestore(auto){
   if (!odReady()) return auto || toast('Connecte d\'abord OneDrive');
   if (auto) toast('📥 Stock vide : récupération depuis OneDrive…');
   else openSheet(`<h3>📥 Récupérer depuis OneDrive</h3><div class="sub">Recherche des fichiers dans ton dossier OneDrive…</div>`);
   try {
     const token = await odToken();
-    const r = await fetch(`${GRAPH}/children?$select=name,lastModifiedDateTime,size,@microsoft.graph.downloadUrl&$top=200`, {headers: {Authorization: 'Bearer ' + token}});
-    if (!r.ok) throw new Error('OneDrive ' + r.status);
-    const files = ((await r.json()).value || []).filter(f => /\.(json|csv)$/i.test(f.name) && f['@microsoft.graph.downloadUrl']);
-    odFound = [];
+    const auth = {headers: {Authorization: 'Bearer ' + token}};
+    const r = await fetch(`${GRAPH}/children?$top=200`, auth);
+    if (!r.ok) throw new Error('liste des fichiers OneDrive : erreur ' + r.status);
+    const all = (await r.json()).value || [];
+    const files = all.filter(f => /\.(json|csv)$/i.test(f.name));
+    odFound = []; odSeen = all.map(f => ({name: f.name, info: /\.(json|csv)$/i.test(f.name) ? '…' : 'ignoré'}));
     for (const f of files) {
+      const seen = odSeen.find(x => x.name === f.name);
       try {
-        const buf = await (await fetch(f['@microsoft.graph.downloadUrl'])).arrayBuffer();
+        // Lien de téléchargement : fourni dans la liste, sinon demandé fichier par fichier
+        let url = f['@microsoft.graph.downloadUrl'];
+        if (!url && f.id) { const m = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${f.id}`, auth); if (m.ok) url = (await m.json())['@microsoft.graph.downloadUrl']; }
+        let buf;
+        if (url) { const d = await fetch(url); if (!d.ok) throw new Error('téléchargement ' + d.status); buf = await d.arrayBuffer(); }
+        else { const d = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${f.id}/content`, auth); if (!d.ok) throw new Error('téléchargement ' + d.status); buf = await d.arrayBuffer(); }
         const text = decodeBytes(buf);
         if (/\.json$/i.test(f.name)) {
           const d = JSON.parse(text);
           if (!Array.isArray(d.items)) continue;
           odFound.push({kind: 'json', name: f.name, when: d.exportedAt || f.lastModifiedDateTime, count: d.items.length, data: d});
+          seen.info = d.items.length + ' article(s)';
         } else {
           const {items, skipped} = csvToItems(text);
           odFound.push({kind: 'csv', name: f.name, when: f.lastModifiedDateTime, count: items.length, items, skipped});
+          seen.info = items.length + ' article(s), ' + buf.byteLength + ' octets';
         }
-      } catch(e) { /* fichier illisible : ignoré */ }
+      } catch(e) { seen.info = 'illisible : ' + (e.message || e); }
     }
     // Les fichiers avec des articles d'abord, puis du plus récent au plus ancien
     odFound.sort((a, b) => (!b.count - !a.count) || (Date.parse(b.when) - Date.parse(a.when)));
@@ -991,12 +1001,13 @@ async function odRestore(auto){
     if (!pick) {
       if (auto) return;
       return openSheet(`<h3>📥 Récupérer depuis OneDrive</h3>
-        <div class="sub">Aucun article à récupérer : les fichiers du dossier OneDrive <b>Applications › Stock Camion</b> sont vides.</div>
+        <div class="sub">Aucun article à récupérer dans le dossier OneDrive <b>Applications › Stock Camion</b>.</div>
+        <div class="preview" style="margin-top:8px">${odSeen.length ? odSeen.map(x => esc(x.name + ' → ' + x.info)).join('\n') : 'Le dossier est vide.'}</div>
         <div class="hint">Dépose ton fichier d'inventaire (.csv) dans ce dossier avec l'appli OneDrive, puis appuie à nouveau sur « Récupérer ».</div>
         <button class="btn block" onclick="closeSheet()">Fermer</button>`);
     }
     odUseFound(odFound.indexOf(pick));
-  } catch(e) { if (!auto) { closeSheet(); toast('Récupération impossible : ' + odErrText(e)); } }
+  } catch(e) { if (!auto) closeSheet(); toast('Récupération impossible : ' + odErrText(e)); }
 }
 function odUseFound(k){
   const f = odFound[k]; if (!f) return;
