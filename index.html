@@ -864,7 +864,11 @@ async function odInit(){
     odSet('err', 'Connexion impossible : ' + odErrText(e));
     return;
   }
-  if (odReady()) { odSet(odMeta.pending ? 'wait' : 'ok'); if (odMeta.pending && odMeta.auto) odSchedule(800); }
+  if (odReady()) {
+    odSet(odMeta.pending ? 'wait' : 'ok');
+    if (!S.items.length) setTimeout(() => { if (!S.items.length) odRestore(true); }, 600); // appli vide → récupère tout seul
+    else if (odMeta.pending && odMeta.auto) odSchedule(800);
+  }
   else odSet('off');
 }
 function odErrText(e){
@@ -903,6 +907,7 @@ function odUi(){
 }
 function odDirty(){
   if (!odClientId()) return;
+  if (!S.items.length) { odMeta.pending = false; odSaveMeta(); return; } // stock vide : on n'envoie rien
   odMeta.pending = true; odSaveMeta();
   if (odReady() && odMeta.auto) { if (OD.state !== 'busy') odSet('wait'); odSchedule(4000); }
 }
@@ -918,15 +923,13 @@ async function odSync(manual){
   if (!navigator.onLine) { odSet('wait', 'Hors ligne : envoi dès le retour du réseau.'); return manual && toast('Hors ligne : envoi dès le retour du réseau'); }
   OD.busy = true; OD.again = false; odSet('busy', 'Envoi en cours…');
   try {
-    const token = await odToken();
     if (!S.items.length) {
-      const remote = await odRemoteData(token);
-      if (remote && remote.items && remote.items.length) {
-        odMeta.pending = false; odSaveMeta();
-        odSet('err', `Ce téléphone est vide alors que ton OneDrive contient ${remote.items.length} articles : rien n'a été envoyé. Appuie sur « Récupérer mes données depuis OneDrive ».`);
-        return;
-      }
+      odMeta.pending = false; odSaveMeta();
+      odSet('wait', 'Stock vide sur ce téléphone : rien n\'est envoyé (tes fichiers OneDrive sont protégés). Utilise « Récupérer ».');
+      if (manual) toast('Stock vide : rien envoyé, OneDrive protégé');
+      return;
     }
+    const token = await odToken();
     const data = JSON.stringify(Object.assign({}, S, {exportedAt: new Date().toISOString()}), null, 1);
     const xlsx = XlsxLite.stockWorkbook(sortedForExport(), S.history, {date: new Date().toLocaleString('fr-FR'), pending: it => pendingQty(it.id)});
     await odPut(token, 'stock-camion.json', data, 'application/json');
@@ -955,9 +958,10 @@ async function odRemoteData(token){
   return d;
 }
 let odFound = [];
-async function odRestore(){
-  if (!odReady()) return toast('Connecte d\'abord OneDrive');
-  openSheet(`<h3>📥 Récupérer depuis OneDrive</h3><div class="sub">Recherche des fichiers dans ton dossier OneDrive…</div>`);
+async function odRestore(auto){
+  if (!odReady()) return auto || toast('Connecte d\'abord OneDrive');
+  if (auto) toast('📥 Stock vide : récupération depuis OneDrive…');
+  else openSheet(`<h3>📥 Récupérer depuis OneDrive</h3><div class="sub">Recherche des fichiers dans ton dossier OneDrive…</div>`);
   try {
     const token = await odToken();
     const r = await fetch(`${GRAPH}/children?$select=name,lastModifiedDateTime,size,@microsoft.graph.downloadUrl&$top=200`, {headers: {Authorization: 'Bearer ' + token}});
@@ -985,13 +989,14 @@ async function odRestore(){
     const full = odFound.filter(f => f.count);
     const pick = full.find(f => f.kind === 'json') || full.find(f => f.kind === 'csv');
     if (!pick) {
+      if (auto) return;
       return openSheet(`<h3>📥 Récupérer depuis OneDrive</h3>
         <div class="sub">Aucun article à récupérer : les fichiers du dossier OneDrive <b>Applications › Stock Camion</b> sont vides.</div>
         <div class="hint">Dépose ton fichier d'inventaire (.csv) dans ce dossier avec l'appli OneDrive, puis appuie à nouveau sur « Récupérer ».</div>
         <button class="btn block" onclick="closeSheet()">Fermer</button>`);
     }
     odUseFound(odFound.indexOf(pick));
-  } catch(e) { closeSheet(); toast('Récupération impossible : ' + odErrText(e)); }
+  } catch(e) { if (!auto) { closeSheet(); toast('Récupération impossible : ' + odErrText(e)); } }
 }
 function odUseFound(k){
   const f = odFound[k]; if (!f) return;
@@ -1051,7 +1056,11 @@ function odSettingsHtml(){
     <button class="btn block" onclick="odLogout()">Déconnecter OneDrive</button>`;
 }
 window.addEventListener('online', () => { if (odReady() && odMeta.pending && odMeta.auto) odSchedule(1500); });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && odReady() && odMeta.pending && odMeta.auto) odSchedule(1500); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !odReady()) return;
+  if (!S.items.length) odRestore(true);
+  else if (odMeta.pending && odMeta.auto) odSchedule(1500);
+});
 
 function sortedForExport(){ return S.items.slice(); } // même ordre que ton inventaire
 function exportXlsx(){
