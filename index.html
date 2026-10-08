@@ -746,45 +746,54 @@ function parseCSV(text){
   return rows.map(r => r.map(c => c.trim())).filter(r => r.some(c => c));
 }
 let pendingImport = null;
+// Texte d'un fichier : UTF-8, ou encodage Windows (fichiers enregistrés par Excel)
+function decodeBytes(buf){
+  try { return new TextDecoder('utf-8', {fatal: true}).decode(buf); }
+  catch(e) { return new TextDecoder('windows-1252').decode(buf); }
+}
+// Lit un inventaire CSV → {items, skipped}
+function csvToItems(text){
+  const rows = parseCSV(text);
+  if (!rows.length) return {items: [], skipped: []};
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const h = rows[0].map(norm);
+  const find = keys => h.findIndex(c => keys.some(k => c.includes(k)));
+  let map = { name: find(['design','nom','article','libelle','produit']), ref: find(['ref','code']),
+              cat: find(['categ','famille','type']), qty: find(['stock','quantit','qte','qty']),
+              min: find(['seuil','min','alerte']), target: find(['cible','max','objectif']) };
+  let data = rows;
+  if (map.name >= 0) data = rows.slice(1);           // en-tête reconnu
+  else map = {name:0, ref:1, cat:2, qty:3, min:4, target:5}; // sinon ordre par défaut
+  const num = v => { const n = parseInt(String(v ?? '').replace(/\s/g,''), 10); return isNaN(n) ? null : Math.max(0, n); };
+  const get = (r, k) => map[k] >= 0 ? r[map[k]] : undefined;
+  const items = [], skipped = [];
+  data.forEach((r, i) => {
+    const name = (get(r,'name') || '').trim();
+    if (!name) { skipped.push(i + 2); return; }
+    items.push({ name, ref:(get(r,'ref')||'').trim(), cat:(get(r,'cat')||'').trim(),
+      qty:num(get(r,'qty')), min:num(get(r,'min')), target:num(get(r,'target')) });
+  });
+  return {items, skipped};
+}
+function showImportSheet(items, skipped, fileName){
+  if (!items.length) return toast('Aucun article trouvé dans le fichier');
+  pendingImport = items;
+  openSheet(`<h3>Importer l'inventaire</h3>
+    <div class="sub"><b>${items.length}</b> article${items.length>1?'s':''} trouvé${items.length>1?'s':''} dans « ${esc(fileName)} »${skipped.length?` · ${skipped.length} ligne(s) sans désignation ignorée(s)`:''}.</div>
+    <div class="preview" style="margin-top:8px">${items.slice(0,8).map(i=>esc(`${i.name}${i.ref?' ('+i.ref+')':''} : ${i.qty ?? '–'}`)).join('\n')}${items.length>8?'\n…':''}</div>
+    <button class="btn primary block" onclick="applyImport('merge')">🔄 Fusionner avec mon stock</button>
+    <div class="hint">Met à jour les articles existants (même référence, ou même nom si pas de référence) et ajoute les nouveaux. Rien n'est supprimé.</div>
+    <button class="btn danger block" onclick="applyImport('replace')">♻️ Remplacer tout mon stock</button>
+    <div class="hint">Supprime les articles actuels et les remplace par ceux du fichier. L'historique est conservé.</div>
+    <button class="btn block" onclick="pendingImport=null;closeSheet()">Annuler</button>`);
+}
 function importCSV(file){
   if (!file) return;
   const r = new FileReader();
   r.onload = () => {
-    // Excel enregistre souvent en encodage Windows : on essaie UTF-8, sinon Windows-1252
-    let text;
-    try { text = new TextDecoder('utf-8', {fatal: true}).decode(r.result); }
-    catch(e) { text = new TextDecoder('windows-1252').decode(r.result); }
-    const rows = parseCSV(text);
-    if (!rows.length) return toast('Fichier vide');
-    // Détection des colonnes par l'en-tête
-    const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const h = rows[0].map(norm);
-    const find = keys => h.findIndex(c => keys.some(k => c.includes(k)));
-    let map = { name: find(['design','nom','article','libelle','produit']), ref: find(['ref','code']),
-                cat: find(['categ','famille','type']), qty: find(['stock','quantit','qte','qty']),
-                min: find(['seuil','min','alerte']), target: find(['cible','max','objectif']) };
-    let data = rows;
-    if (map.name >= 0) data = rows.slice(1);           // en-tête reconnu
-    else map = {name:0, ref:1, cat:2, qty:3, min:4, target:5}; // sinon ordre par défaut
-    const num = v => { const n = parseInt(String(v ?? '').replace(/\s/g,''), 10); return isNaN(n) ? null : Math.max(0, n); };
-    const get = (r, k) => map[k] >= 0 ? r[map[k]] : undefined;
-    const items = [], skipped = [];
-    data.forEach((r, i) => {
-      const name = (get(r,'name') || '').trim();
-      if (!name) { skipped.push(i + 2); return; }
-      items.push({ name, ref:(get(r,'ref')||'').trim(), cat:(get(r,'cat')||'').trim(),
-        qty:num(get(r,'qty')), min:num(get(r,'min')), target:num(get(r,'target')) });
-    });
-    if (!items.length) return toast('Aucun article trouvé dans le fichier');
-    pendingImport = items;
-    openSheet(`<h3>Importer l'inventaire</h3>
-      <div class="sub"><b>${items.length}</b> article${items.length>1?'s':''} trouvé${items.length>1?'s':''} dans « ${esc(file.name)} »${skipped.length?` · ${skipped.length} ligne(s) sans désignation ignorée(s)`:''}.</div>
-      <div class="preview" style="margin-top:8px">${items.slice(0,8).map(i=>esc(`${i.name}${i.ref?' ('+i.ref+')':''} : ${i.qty ?? '–'}`)).join('\n')}${items.length>8?'\n…':''}</div>
-      <button class="btn primary block" onclick="applyImport('merge')">🔄 Fusionner avec mon stock</button>
-      <div class="hint">Met à jour les articles existants (même référence, ou même nom si pas de référence) et ajoute les nouveaux. Rien n'est supprimé.</div>
-      <button class="btn danger block" onclick="applyImport('replace')">♻️ Remplacer tout mon stock</button>
-      <div class="hint">Supprime les articles actuels et les remplace par ceux du fichier. L'historique est conservé.</div>
-      <button class="btn block" onclick="pendingImport=null;closeSheet()">Annuler</button>`);
+    const {items, skipped} = csvToItems(decodeBytes(r.result));
+    if (!items.length && !skipped.length) return toast('Fichier vide');
+    showImportSheet(items, skipped, file.name);
   };
   r.readAsArrayBuffer(file);
 }
@@ -945,20 +954,57 @@ async function odRemoteData(token){
   d.__modified = meta.lastModifiedDateTime;
   return d;
 }
+let odFound = [];
 async function odRestore(){
   if (!odReady()) return toast('Connecte d\'abord OneDrive');
+  openSheet(`<h3>📥 Récupérer depuis OneDrive</h3><div class="sub">Recherche des fichiers dans ton dossier OneDrive…</div>`);
   try {
     const token = await odToken();
-    const d = await odRemoteData(token);
-    if (!d) return toast('Aucune sauvegarde trouvée sur OneDrive');
-    if (!Array.isArray(d.items)) throw new Error('fichier invalide');
-    const when = d.exportedAt ? new Date(d.exportedAt).toLocaleString('fr-FR') : fmtDate(Date.parse(d.__modified));
-    if (!d.items.length) return alert(`La sauvegarde OneDrive du ${when} est VIDE (0 article) : rien n'a été remplacé.\n\nPour remettre ton stock : Réglages → Importer un inventaire (fichier CSV) ou Importer une sauvegarde (fichier .json).`);
-    if (!confirm(`Remplacer les données de ce téléphone (${S.items.length} articles) par la sauvegarde OneDrive du ${when} (${d.items.length} articles) ?`)) return;
-    snapshot();
-    delete d.exportedAt; delete d.__modified;
-    S = Object.assign(defaults(), d); save(); render(); offerUndo('Données récupérées depuis OneDrive');
-  } catch(e) { toast('Récupération impossible : ' + odErrText(e)); }
+    const r = await fetch(`${GRAPH}/children?$select=name,lastModifiedDateTime,size,@microsoft.graph.downloadUrl&$top=200`, {headers: {Authorization: 'Bearer ' + token}});
+    if (!r.ok) throw new Error('OneDrive ' + r.status);
+    const files = ((await r.json()).value || []).filter(f => /\.(json|csv)$/i.test(f.name) && f['@microsoft.graph.downloadUrl']);
+    odFound = [];
+    for (const f of files) {
+      try {
+        const buf = await (await fetch(f['@microsoft.graph.downloadUrl'])).arrayBuffer();
+        const text = decodeBytes(buf);
+        if (/\.json$/i.test(f.name)) {
+          const d = JSON.parse(text);
+          if (!Array.isArray(d.items)) continue;
+          odFound.push({kind: 'json', name: f.name, when: d.exportedAt || f.lastModifiedDateTime, count: d.items.length, data: d});
+        } else {
+          const {items, skipped} = csvToItems(text);
+          odFound.push({kind: 'csv', name: f.name, when: f.lastModifiedDateTime, count: items.length, items, skipped});
+        }
+      } catch(e) { /* fichier illisible : ignoré */ }
+    }
+    // Les fichiers avec des articles d'abord, puis du plus récent au plus ancien
+    odFound.sort((a, b) => (!b.count - !a.count) || (Date.parse(b.when) - Date.parse(a.when)));
+    // Choix automatique : la sauvegarde complète si elle contient des articles,
+    // sinon le fichier CSV le plus récent qui en contient.
+    const full = odFound.filter(f => f.count);
+    const pick = full.find(f => f.kind === 'json') || full.find(f => f.kind === 'csv');
+    if (!pick) {
+      return openSheet(`<h3>📥 Récupérer depuis OneDrive</h3>
+        <div class="sub">Aucun article à récupérer : les fichiers du dossier OneDrive <b>Applications › Stock Camion</b> sont vides.</div>
+        <div class="hint">Dépose ton fichier d'inventaire (.csv) dans ce dossier avec l'appli OneDrive, puis appuie à nouveau sur « Récupérer ».</div>
+        <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+    }
+    odUseFound(odFound.indexOf(pick));
+  } catch(e) { closeSheet(); toast('Récupération impossible : ' + odErrText(e)); }
+}
+function odUseFound(k){
+  const f = odFound[k]; if (!f) return;
+  closeSheet();
+  if (f.kind === 'csv') {
+    pendingImport = f.items;
+    applyImport('merge'); // ajoute / met à jour les articles, annulable
+    return offerUndo(`📥 ${f.count} articles récupérés depuis « ${f.name} »`);
+  }
+  snapshot();
+  const d = Object.assign({}, f.data); delete d.exportedAt;
+  S = Object.assign(defaults(), d); save(); render();
+  offerUndo(`📥 Sauvegarde OneDrive récupérée (${d.items.length} articles)`);
 }
 async function odOpenFolder(){
   try {
@@ -1000,6 +1046,7 @@ function odSettingsHtml(){
     <button class="btn block" onclick="odSync(true)">🔄 Synchroniser maintenant</button>
     <button class="btn block" onclick="odOpenFolder()">📂 Ouvrir le dossier OneDrive</button>
     <button class="btn block" onclick="odRestore()">📥 Récupérer mes données depuis OneDrive</button>
+    <div class="hint">En un appui : reprend la sauvegarde complète si elle contient des articles, sinon le fichier CSV le plus récent du dossier (par exemple un inventaire que tu y as déposé).</div>
     <div class="hint">Fichiers envoyés : <b>stock-camion.xlsx</b> (Excel mis en forme + historique), <b>stock-camion.csv</b> et <b>stock-camion.json</b> (sauvegarde complète). L'appli reste la référence : une modification faite dans l'Excel sur OneDrive sera remplacée au prochain envoi.</div>
     <button class="btn block" onclick="odLogout()">Déconnecter OneDrive</button>`;
 }
