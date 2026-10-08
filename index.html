@@ -910,6 +910,14 @@ async function odSync(manual){
   OD.busy = true; OD.again = false; odSet('busy', 'Envoi en cours…');
   try {
     const token = await odToken();
+    if (!S.items.length) {
+      const remote = await odRemoteData(token);
+      if (remote && remote.items && remote.items.length) {
+        odMeta.pending = false; odSaveMeta();
+        odSet('err', `Ce téléphone est vide alors que ton OneDrive contient ${remote.items.length} articles : rien n'a été envoyé. Appuie sur « Récupérer mes données depuis OneDrive ».`);
+        return;
+      }
+    }
     const data = JSON.stringify(Object.assign({}, S, {exportedAt: new Date().toISOString()}), null, 1);
     const xlsx = XlsxLite.stockWorkbook(sortedForExport(), S.history, {date: new Date().toLocaleString('fr-FR'), pending: it => pendingQty(it.id)});
     await odPut(token, 'stock-camion.json', data, 'application/json');
@@ -928,20 +936,27 @@ async function odSync(manual){
     if (OD.again && odMeta.auto) odSchedule(1500);
   }
 }
+async function odRemoteData(token){
+  const r = await fetch(`${GRAPH}:/stock-camion.json`, {headers: {Authorization: 'Bearer ' + token}});
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('OneDrive ' + r.status);
+  const meta = await r.json();
+  const d = await (await fetch(meta['@microsoft.graph.downloadUrl'])).json();
+  d.__modified = meta.lastModifiedDateTime;
+  return d;
+}
 async function odRestore(){
   if (!odReady()) return toast('Connecte d\'abord OneDrive');
   try {
     const token = await odToken();
-    const r = await fetch(`${GRAPH}:/stock-camion.json`, {headers: {Authorization: 'Bearer ' + token}});
-    if (r.status === 404) return toast('Aucune sauvegarde trouvée sur OneDrive');
-    if (!r.ok) throw new Error('OneDrive ' + r.status);
-    const meta = await r.json();
-    const d = await (await fetch(meta['@microsoft.graph.downloadUrl'])).json();
+    const d = await odRemoteData(token);
+    if (!d) return toast('Aucune sauvegarde trouvée sur OneDrive');
     if (!Array.isArray(d.items)) throw new Error('fichier invalide');
-    const when = d.exportedAt ? new Date(d.exportedAt).toLocaleString('fr-FR') : fmtDate(Date.parse(meta.lastModifiedDateTime));
-    if (!confirm(`Remplacer les données de ce téléphone par la sauvegarde OneDrive du ${when} ?\n(${d.items.length} articles)`)) return;
+    const when = d.exportedAt ? new Date(d.exportedAt).toLocaleString('fr-FR') : fmtDate(Date.parse(d.__modified));
+    if (!d.items.length) return alert(`La sauvegarde OneDrive du ${when} est VIDE (0 article) : rien n'a été remplacé.\n\nPour remettre ton stock : Réglages → Importer un inventaire (fichier CSV) ou Importer une sauvegarde (fichier .json).`);
+    if (!confirm(`Remplacer les données de ce téléphone (${S.items.length} articles) par la sauvegarde OneDrive du ${when} (${d.items.length} articles) ?`)) return;
     snapshot();
-    delete d.exportedAt;
+    delete d.exportedAt; delete d.__modified;
     S = Object.assign(defaults(), d); save(); render(); offerUndo('Données récupérées depuis OneDrive');
   } catch(e) { toast('Récupération impossible : ' + odErrText(e)); }
 }
