@@ -125,6 +125,10 @@ body.undo-on .toast{bottom:calc(var(--navh,60px) + 130px)}
 <script src="msal-browser.min.js"></script>
 <script src="xlsx-lite.js"></script>
 <script>
+/* ============ Version ============ */
+const APP_VERSION = '1.6';
+const APP_DATE = '09/10/2026';
+
 /* ============ Stockage local ============ */
 const KEY = 'stockCamion_v1';
 let memoryFallback = null;
@@ -302,6 +306,8 @@ function openMove(id){
   openSheet(`
     <h3>${esc(it.name)}</h3>
     <div class="sub">${esc(it.ref||'')} ${it.ref?'·':''} ${esc(it.cat||'Divers')} — en stock : <b>${it.qty}</b> (seuil ${it.min})</div>
+    ${(() => { const st = usageStats(), g = st.spanDays >= MIN_DAYS && suggestFor(it, st);
+      return g ? `<div class="sub">📊 Conso ~${fmtRate(g.perWeek)}/semaine · conseillé : seuil <b>${g.min}</b>, cible <b>${g.target}</b>${g.min !== it.min || g.target !== +it.target ? ` <a href="#" onclick="event.preventDefault();applyOneAuto('${it.id}')">appliquer</a>` : ' ✓'}</div>` : ''; })()}
     <label>Quantité</label>
     <input id="mvQty" type="number" inputmode="numeric" min="1" value="1">
     <label>Note (chantier, client…) – facultatif</label>
@@ -458,6 +464,83 @@ function markOrdered(){
   S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`📨 Demande envoyée au responsable : ${lines.map(l=>l.it.name+' ×'+l.n).join(', ')}`});
   selection = {}; extraOrder = {};
   save(); closeSheet(); render(); offerUndo('Commande marquée comme envoyée');
+}
+
+
+/* ============ Seuils automatiques ============ */
+// Retraits « réels » : on ignore les corrections d'inventaire, les imports et les réceptions.
+const NOT_USAGE = /^(Correction inventaire|Import inventaire|Réception)/;
+const DAY = 864e5, WINDOW_DAYS = 56, MIN_DAYS = 7;
+function usageStats(){
+  const now = Date.now(), from = now - WINDOW_DAYS * DAY;
+  const hist = S.history.filter(h => h.t >= from);
+  const first = hist.length ? Math.min(...hist.map(h => h.t)) : now;
+  const spanDays = Math.max(1, (now - first) / DAY);
+  const per = {};
+  hist.forEach(h => {
+    if (h.delta >= 0 || NOT_USAGE.test(h.note || '')) return;
+    const u = per[h.itemId] || (per[h.itemId] = {out: 0, events: 0});
+    u.out += -h.delta; u.events++;
+  });
+  return {spanDays, per};
+}
+function suggestFor(it, st){
+  const lead = Math.max(1, +S.settings.leadDays || 7), cover = Math.max(1, +S.settings.coverWeeks || 2);
+  const u = st.per[it.id];
+  if (!u || u.events < 2) return null;                      // pas assez de retraits pour cet article
+  const perDay = u.out / Math.max(st.spanDays, MIN_DAYS);
+  const min = Math.max(1, Math.ceil(perDay * lead));
+  const target = Math.max(min + 1, Math.ceil(perDay * (lead + cover * 7)));
+  return {perWeek: perDay * 7, min, target};
+}
+const chg = (a, b) => String(a) === String(b) ? `<b>${b}</b> (inchangé)` : `<s>${a}</s> → <b>${b}</b>`;
+const fmtRate = w => w >= 10 ? Math.round(w) : (Math.round(w * 10) / 10).toString().replace('.', ',');
+function saveAutoParams(){
+  if ($('sLead')) S.settings.leadDays = Math.max(1, parseInt($('sLead').value, 10) || 7);
+  if ($('sCover')) S.settings.coverWeeks = Math.max(1, parseInt($('sCover').value, 10) || 2);
+  save();
+}
+let autoList = [];
+function openAutoThresholds(){
+  const st = usageStats();
+  if (st.spanDays < MIN_DAYS) {
+    const left = Math.ceil(MIN_DAYS - st.spanDays);
+    return openSheet(`<h3>📊 Seuils conseillés</h3>
+      <div class="sub">Il faut au moins <b>${MIN_DAYS} jours</b> d'utilisation pour estimer ta consommation. Encore environ <b>${left} jour${left>1?'s':''}</b> : continue à noter tes retraits, l'appli fera le calcul.</div>
+      <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+  }
+  autoList = S.items.map(it => ({it, sug: suggestFor(it, st)})).filter(x => x.sug && (x.sug.min !== x.it.min || x.sug.target !== +x.it.target));
+  const noData = S.items.filter(it => !suggestFor(it, st)).length;
+  openSheet(`<h3>📊 Seuils conseillés</h3>
+    <div class="sub" style="margin-bottom:8px">Calculés sur ${Math.round(st.spanDays)} jours · livraison ${S.settings.leadDays || 7} j · autonomie ${S.settings.coverWeeks || 2} sem.</div>
+    ${autoList.length ? autoList.map((x, k) => `<div class="card row">
+      <input type="checkbox" class="check autochk" id="ac${k}" checked>
+      <label for="ac${k}" class="grow" style="margin:0;font-size:inherit;color:inherit;font-weight:normal">
+        <div class="name">${esc(x.it.name)}</div>
+        <div class="sub">~${fmtRate(x.sug.perWeek)} / semaine · seuil ${chg(x.it.min, x.sug.min)} · cible ${chg(x.it.target || '–', x.sug.target)}</div>
+      </label></div>`).join('')
+    : '<div class="empty">✅ Tes seuils correspondent déjà à ta consommation.</div>'}
+    ${noData ? `<div class="hint">${noData} article${noData>1?'s':''} sans assez de retraits pour un calcul fiable : seuils inchangés.</div>` : ''}
+    ${autoList.length ? `<button class="btn primary block" onclick="applyAutoThresholds()">✅ Appliquer les seuils cochés</button>` : ''}
+    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+}
+function applyOneAuto(id){
+  const it = S.items.find(i => i.id === id), g = it && suggestFor(it, usageStats()); if (!g) return;
+  snapshot(); const before = it.qty; it.min = g.min; it.target = g.target;
+  checkThreshold(it, before > it.min ? before : it.min + 1);
+  save(); closeSheet(); render(); offerUndo(`📊 ${it.name} : seuil ${g.min}, cible ${g.target}`);
+}
+function applyAutoThresholds(){
+  const picked = autoList.filter((x, k) => $('ac' + k) && $('ac' + k).checked);
+  if (!picked.length) return toast('Coche au moins un article');
+  snapshot();
+  picked.forEach(({it, sug}) => {
+    const cur = S.items.find(i => i.id === it.id); if (!cur) return;
+    const before = cur.qty; cur.min = sug.min; cur.target = sug.target;
+    checkThreshold(cur, before > cur.min ? before : cur.min + 1);
+  });
+  save(); closeSheet(); render();
+  offerUndo(`📊 Seuils mis à jour pour ${picked.length} article${picked.length>1?'s':''}`);
 }
 
 /* ============ Annuler la dernière action ============ */
@@ -659,6 +742,16 @@ function renderSettings(){
       <div class="hint">Raccourcis : <b>{date}</b> = date du jour, <b>{nom}</b> = ton nom. La liste du matériel s'insère automatiquement entre le début et la fin.</div>
       <button class="btn primary block" onclick="saveSettings()">Enregistrer</button>
     </div>
+    <h2>📊 Seuils automatiques</h2>
+    <div class="card">
+      <div class="sub">L'appli calcule tes seuils et cibles d'après ta <b>vraie consommation</b> (retraits des 8 dernières semaines).</div>
+      <div class="grid2">
+        <div><label>Délai de livraison (jours)</label><input id="sLead" type="number" inputmode="numeric" min="1" value="${S.settings.leadDays || 7}"></div>
+        <div><label>Autonomie voulue (semaines)</label><input id="sCover" type="number" inputmode="numeric" min="1" value="${S.settings.coverWeeks || 2}"></div>
+      </div>
+      <div class="hint">Seuil = ce que tu consommes pendant le délai de livraison. Cible = seuil + l'autonomie voulue.</div>
+      <button class="btn primary block" onclick="saveAutoParams();openAutoThresholds()">📊 Voir les seuils conseillés</button>
+    </div>
     <h2>☁️ OneDrive (synchronisation automatique)</h2>
     <div class="card" id="odCard">${odSettingsHtml()}</div>
     <h2>Sauvegarde</h2>
@@ -682,7 +775,8 @@ function renderSettings(){
     </div>
     <div class="card">
       <button class="btn danger block" onclick="resetAll()">Tout effacer</button>
-    </div>`;
+    </div>
+    <div class="sub center" style="margin:14px 0 4px">🚐 Stock Camion · <b>version ${APP_VERSION}</b> du ${APP_DATE}</div>`;
 }
 function saveSettings(){
   Object.assign(S.settings, {
