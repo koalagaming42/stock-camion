@@ -3,31 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1f3a5f">
+<meta name="theme-color" content="#0f4c5c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Stock Camion">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Batteries VE">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>Stock Camion</title>
+<title>Batteries VE</title>
 <style>
 :root{
-  --bg:#f3f5f8;--card:#fff;--text:#18202b;--muted:#6b7686;--line:#e2e6ec;
-  --primary:#1f3a5f;--primary-2:#2d5a8e;--ok:#1f9d55;--warn:#d98a00;--bad:#d64545;
-  --chip:#eef2f7;--shadow:0 1px 3px rgba(0,0,0,.08);
+  --bg:#f2f5f6;--card:#fff;--text:#16212a;--muted:#667684;--line:#dfe6ea;
+  --primary:#0f4c5c;--primary-2:#1b6f85;--ok:#1f9d55;--warn:#d98a00;--bad:#d64545;
+  --chip:#eaf1f3;--shadow:0 1px 3px rgba(0,0,0,.08);
 }
 @media (prefers-color-scheme: dark){
-  :root{--bg:#0f141b;--card:#18202b;--text:#e8edf3;--muted:#8d99a8;--line:#273241;
-  --primary:#4f86c6;--primary-2:#6a9fdc;--chip:#223042;--shadow:none;}
+  :root{--bg:#0e1418;--card:#172128;--text:#e6eef2;--muted:#8b9ba6;--line:#26343d;
+  --primary:#3aa0b8;--primary-2:#5bbbd2;--chip:#20303a;--shadow:none;}
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:16px}
-header{position:sticky;top:0;z-index:10;background:var(--primary);color:#fff;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;display:flex;align-items:center;justify-content:space-between}
-header h1{font-size:19px;margin:0;font-weight:700}
-.bell{position:relative;background:none;border:0;color:#fff;font-size:24px;padding:4px 8px}
+header{position:sticky;top:0;z-index:10;background:var(--primary);color:#fff;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;display:flex;align-items:center;gap:10px}
+header h1{font-size:19px;margin:0;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{position:relative;background:none;border:0;color:#fff;font-size:22px;padding:4px 8px}
+.back{font-size:26px;line-height:1;padding:0 6px 2px 0}
 .badge{position:absolute;top:-2px;right:0;background:var(--bad);color:#fff;font-size:11px;font-weight:700;border-radius:10px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px}
+.oddot{position:absolute;right:4px;bottom:6px;width:10px;height:10px;border-radius:50%;border:2px solid var(--primary);background:#9aa5b1}
+.oddot.ok{background:#2ecc71}.oddot.wait{background:#ffc107}.oddot.err{background:#e74c3c}
 main{padding:12px 16px calc(90px + env(safe-area-inset-bottom));max-width:700px;margin:0 auto}
 nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:10}
 nav button{flex:1;background:none;border:0;color:var(--muted);padding:9px 0 8px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
@@ -35,965 +37,743 @@ nav button span.i{font-size:21px}
 nav button.active{color:var(--primary)}
 nav .badge{top:4px;right:calc(50% - 22px)}
 .card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--line);padding:12px;margin-bottom:10px}
+.tap{cursor:pointer}
 .row{display:flex;align-items:center;gap:10px}
 .grow{flex:1;min-width:0}
-.name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name{font-weight:600}
 .sub{color:var(--muted);font-size:13px;margin-top:2px}
-.qty{font-size:22px;font-weight:700;min-width:44px;text-align:center}
-.qty.low{color:var(--bad)}.qty.mid{color:var(--warn)}.qty.ok{color:var(--ok)}
 .btn{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:600;background:var(--chip);color:var(--text)}
 .btn.primary{background:var(--primary);color:#fff}
 .btn.danger{background:var(--bad);color:#fff}
 .btn.ok{background:var(--ok);color:#fff}
 .btn.block{width:100%;margin-top:8px}
-.round{width:42px;height:42px;border-radius:50%;border:0;font-size:22px;font-weight:700;background:var(--chip);color:var(--text)}
-.round.minus{color:var(--bad)}.round.plus{color:var(--ok)}
+.btn.small{padding:7px 10px;font-size:13px}
 input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-size:16px;font-family:inherit}
 textarea{min-height:80px;resize:vertical}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px;font-weight:600}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.toolbar{display:flex;gap:8px;margin-bottom:10px}
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}
-.chip{flex:none;border:0;background:var(--chip);color:var(--text);border-radius:16px;padding:6px 12px;font-size:13px}
-.chip.on{background:var(--primary);color:#fff}
-.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:middle}
-.tag.bad{background:#fde8e8;color:var(--bad)}.tag.info{background:#e6effa;color:var(--primary-2)}
-@media (prefers-color-scheme: dark){.tag.bad{background:#3a1d1d}.tag.info{background:#1d2c3f}}
-h2{font-size:17px;margin:6px 0 10px}
-.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+h2{font-size:17px;margin:14px 0 10px}
+.empty{text-align:center;color:var(--muted);padding:26px 10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--text);border-radius:16px;padding:7px 12px;font-size:14px;font-weight:600}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.pill{display:inline-block;font-size:12px;font-weight:700;border-radius:8px;padding:3px 8px;margin:4px 4px 0 0}
+.pill.ok{background:#e3f4ea;color:#17703f}.pill.warn{background:#fff1d6;color:#8a5a00}.pill.bad{background:#fde8e8;color:var(--bad)}.pill.info{background:#e3eef2;color:var(--primary-2)}
+@media (prefers-color-scheme: dark){.pill.ok{background:#173a26;color:#7fd8a1}.pill.warn{background:#3a2c10;color:#f3c66b}.pill.bad{background:#3a1d1d;color:#ff8f8f}.pill.info{background:#1d2f38;color:#8fd0e2}}
+.meas{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;font-size:14px}
+.meas span{background:var(--chip);border-radius:8px;padding:4px 8px}
+.bat{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+.unit{display:flex;gap:4px}
+.unit .chip{padding:7px 10px}
+.preview{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:52vh;overflow:auto}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.center{text-align:center}
+.prog{height:6px;background:var(--chip);border-radius:4px;overflow:hidden;margin-top:8px}
+.prog>div{height:100%;background:var(--ok)}
 .fab{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:0;background:var(--primary);color:#fff;font-size:30px;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:9}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none;align-items:flex-end;justify-content:center}
 .sheet-bg.show{display:flex}
-.sheet{background:var(--card);width:100%;max-width:700px;max-height:90vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+.sheet{background:var(--card);width:100%;max-width:700px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
 .sheet h3{margin:0 0 6px;font-size:18px}
-.hist .d{font-weight:700;min-width:46px;text-align:right}
-.hist .d.p{color:var(--ok)}.hist .d.m{color:var(--bad)}
-.notif{border-left:4px solid var(--warn)}
-.notif.read{opacity:.55;border-left-color:var(--line)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 .undobar{position:fixed;left:12px;right:12px;bottom:calc(var(--navh,60px) + 8px);max-width:676px;margin:0 auto;background:#222;color:#fff;border-radius:12px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:10px;z-index:31;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.3);transform:translateY(20px);opacity:0;visibility:hidden;pointer-events:none;transition:transform .25s,opacity .25s,visibility .25s}
 .undobar.show{transform:none;opacity:1;visibility:visible;pointer-events:auto}
-/* Quand la barre Annuler est affichée : la page lui laisse sa place, rien n'est caché */
+.undobar span{flex:1}
+.undobar button{border:0;border-radius:8px;background:#ffc107;color:#222;font-weight:700;font-size:14px;padding:9px 12px}
 body.undo-on main{padding-bottom:calc(var(--navh,60px) + 90px + env(safe-area-inset-bottom))}
 body.undo-on .fab{bottom:calc(var(--navh,60px) + 76px)}
 body.undo-on .toast{bottom:calc(var(--navh,60px) + 130px)}
-.undobar span{flex:1}
-.undobar button{border:0;border-radius:8px;background:#ffc107;color:#222;font-weight:700;font-size:14px;padding:9px 12px}
-.alertbar{background:#fff4e0;color:#8a5a00;border:1px solid #f1d39a;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:14px;display:flex;align-items:center;gap:8px}
-@media (prefers-color-scheme: dark){.alertbar{background:#3a2c10;color:#f3c66b;border-color:#5a4418}}
-.check{width:24px;height:24px;flex:none;accent-color:var(--primary)}
-.smallnum{width:70px;text-align:center;padding:8px}
-.preview{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:260px;overflow:auto}
-.hint{font-size:12px;color:var(--muted);margin-top:4px}
-.center{text-align:center}
-.hbtns{display:flex;gap:2px}
-.oddot{position:absolute;right:4px;bottom:6px;width:10px;height:10px;border-radius:50%;border:2px solid var(--primary);background:#9aa5b1}
-.oddot.ok{background:#2ecc71}.oddot.wait{background:#ffc107}.oddot.err{background:#e74c3c}
+.alertbar{border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:14px;display:flex;align-items:center;gap:8px;background:#fff4e0;color:#8a5a00;border:1px solid #f1d39a}
+.alertbar.bad{background:#fde8e8;color:var(--bad);border-color:#f3b4b4}
+@media (prefers-color-scheme: dark){.alertbar{background:#3a2c10;color:#f3c66b;border-color:#5a4418}.alertbar.bad{background:#3a1d1d;color:#ff8f8f;border-color:#5a2a2a}}
 .odstat{display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0}
-.infobar{background:#e6effa;color:var(--primary-2);border-color:#b9d0ec}
-@media (prefers-color-scheme: dark){.infobar{background:#1d2c3f;color:#9cc2ee;border-color:#2c4566}}
+.check{width:24px;height:24px;flex:none;accent-color:var(--primary)}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🚐 Stock Camion</h1>
-  <div class="hbtns">
-    <button class="bell" id="odBadge" onclick="go('settings')" aria-label="OneDrive" hidden>☁️<span class="oddot" id="odDot"></span></button>
-    <button class="bell" onclick="openNotifs()" aria-label="Notifications">🔔<span class="badge" id="bellBadge" hidden>0</span></button>
-  </div>
+  <button class="hbtn back" id="backBtn" onclick="go('ves')" hidden aria-label="Retour">‹</button>
+  <h1 id="title">🔋 Batteries VE</h1>
+  <button class="hbtn" id="odBadge" onclick="go('settings')" aria-label="OneDrive" hidden>☁️<span class="oddot" id="odDot"></span></button>
 </header>
 
 <main id="view"></main>
-
-<button class="fab" id="fab" onclick="openItem()" aria-label="Ajouter un article">+</button>
+<button class="fab" id="fab" onclick="fabAction()" aria-label="Ajouter">+</button>
 
 <nav>
-  <button data-tab="stock" class="active" onclick="go('stock')"><span class="i">📦</span>Stock</button>
-  <button data-tab="order" onclick="go('order')"><span class="i">🛒</span>À commander<span class="badge" id="orderBadge" hidden>0</span></button>
-  <button data-tab="history" onclick="go('history')"><span class="i">🕘</span>Historique</button>
+  <button data-tab="ves" class="active" onclick="go('ves')"><span class="i">📋</span>VE</button>
+  <button data-tab="bats" onclick="go('bats')"><span class="i">🔋</span>Batteries<span class="badge" id="batBadge" hidden>0</span></button>
   <button data-tab="settings" onclick="go('settings')"><span class="i">⚙️</span>Réglages</button>
 </nav>
 
-<div class="sheet-bg" id="sheetBg" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
+<div class="sheet-bg" id="sheetBg" onclick="if(event.target===this){closeSheet();render()}"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
 <div class="undobar" id="undoBar"><span id="undoMsg"></span><button onclick="undo()">↩️ Annuler</button></div>
-<input type="file" id="impGlobal" accept=".json,application/json" hidden onchange="importData(this.files[0]);this.value=''">
+<input type="file" id="impJson" accept=".json,application/json" hidden onchange="importData(this.files[0]);this.value=''">
 
 <script src="msal-browser.min.js"></script>
 <script src="xlsx-lite.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="jspdf.plugin.autotable.min.js"></script>
 <script>
 /* ============ Version ============ */
-const APP_VERSION = '1.6';
-const APP_DATE = '09/10/2026';
+const APP_VERSION = '1.2';
+const APP_DATE = '12/10/2026';
 
-/* ============ Stockage local ============ */
-const KEY = 'stockCamion_v1';
-let memoryFallback = null;
+/* ============ Données ============ */
+const KEY = 'batteriesVE_v1';
+const CAPS = [7, 17, 18, 24, 36];
 const defaults = () => ({
-  items: [],
-  history: [],
-  notifs: [],
-  orders: [],
-  settings: {
-    to: '', cc: '', tech: '',
-    odClientId: 'e111e96e-5b48-406d-8b45-7dd545ad91d9', // appli « Stock Camion » déclarée chez Microsoft (non secret)
-    subject: 'Demande de réapprovisionnement camion – {date}',
-    intro: `Salut,\n\nAvec les dernières installs et dépannages, je commence à être juste sur certaines pièces dans le camion. Pour ne pas me retrouver bloqué en intervention pourrais-tu me commander ça s'il te plait :`,
-    outro: 'Merci d\'avance.\n\nCordialement,\n{nom}'
-  },
-  lastCat: 'Tous'
+  sites: [],      // {id, name}
+  ves: [],        // {id, siteId, start, end, closed, coffrets:[...], carnet, carnetEdited}
+  settings: {ageYears: 4, warnMonths: 6, tech: '', odClientId: '850f4eca-b80e-4b18-aa2a-33d7855f04bf'}, // appli « BATTERIES VE » chez Microsoft (non secret)
+  lastBackup: 0
 });
 function load(){
   try {
     const s = localStorage.getItem(KEY);
-    if (s) {
-      const d = defaults(), saved = JSON.parse(s), st = Object.assign({}, d.settings, saved.settings || {});
-      // Un champ resté vide reprend la valeur par défaut (nom, adresse…)
-      for (const k in d.settings) if (!st[k] && d.settings[k]) st[k] = d.settings[k];
-      // Anciens textes par défaut jamais modifiés → remplacés par le nouveau
-      const oldIntros = [
-        'Bonjour,\n\nPeux-tu passer commande du matériel suivant pour mon camion :',
-        `Bonjour,\n\nSuite au suivi de stock de mon véhicule d'intervention, plusieurs articles sont passés sous leur seuil minimum après les dernières installations, mises en service et opérations de maintenance.\n\nAfin de pouvoir continuer à assurer les interventions planifiées et les dépannages urgents dans les délais, sans retour au dépôt ni report de rendez-vous client, peux-tu passer commande du matériel suivant :`,
-        `Salut,\n\nAvec les dernières installs et dépannages, je commence à être juste sur certaines pièces dans le camion. Pour ne pas me retrouver bloqué en intervention ou devoir repasser au dépôt, tu pourrais me commander ça :`
-      ];
-      if (oldIntros.includes(st.intro)) st.intro = d.settings.intro;
-      return Object.assign(d, saved, {settings: st});
-    }
-  }
-  catch(e){ if (memoryFallback) return memoryFallback; }
+    if (s) { const d = defaults(), saved = JSON.parse(s), st = Object.assign({}, d.settings, saved.settings || {}); if (!st.odClientId) st.odClientId = d.settings.odClientId; return Object.assign(d, saved, {settings: st}); }
+  } catch(e){}
   return defaults();
 }
-function save(){
-  try { localStorage.setItem(KEY, JSON.stringify(S)); }
-  catch(e){ memoryFallback = S; }
-  updateBadges();
-  try { odDirty(); } catch(e){} // synchro OneDrive (si activée)
-}
 let S = load();
-
-/* ============ Sécurité des données ============ */
-// Vérifie que le téléphone enregistre bien les données
-let storageOK = true;
-try { localStorage.setItem('__test', '1'); localStorage.removeItem('__test'); } catch(e){ storageOK = false; }
-// Demande au navigateur de ne pas effacer les données de l'appli quand il fait du ménage
-try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
-const BACKUP_DAYS = 7;
-const daysSinceBackup = () => {
-  // Un envoi OneDrive réussi compte comme une sauvegarde
-  let last = S.lastBackup || 0;
-  try { const m = JSON.parse(localStorage.getItem('stockCamion_onedrive')) || {}; if (m.last > last) last = m.last; } catch(e){}
-  return last ? Math.floor((Date.now() - last) / 864e5) : null;
-};
-function safetyBanner(){
-  if (!storageOK) return `<div class="alertbar" style="background:#fde8e8;color:var(--bad);border-color:#f3b4b4">⛔ <div class="grow"><b>Les données ne sont pas enregistrées</b> sur ce navigateur : tout sera perdu à la fermeture. Ouvre l'appli avec <b>Chrome</b> (ou Safari sur iPhone).</div></div>`;
-  const d = daysSinceBackup();
-  if (S.items.length && (d === null || d >= BACKUP_DAYS))
-    return `<div class="alertbar" onclick="exportData()">💾 <div class="grow">${d === null ? 'Aucune sauvegarde faite' : `Dernière sauvegarde il y a <b>${d} jours</b>`} — appuie ici pour sauvegarder</div>›</div>`;
-  return '';
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+  updateBadges();
+  try { odDirty(); } catch(e){}
 }
-let tab = 'stock', search = '', catFilter = 'Tous';
+let storageOK = true;
+try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); } catch(e){ storageOK = false; }
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
 
 /* ============ Utilitaires ============ */
 const $ = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDay = t => t ? new Date(t).toLocaleDateString('fr-FR') : '';
 const fmtDate = t => new Date(t).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-const today = () => new Date().toLocaleDateString('fr-FR');
-function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
-const isLow = it => it.qty <= it.min;
-const toOrderQty = it => Math.max((it.target || it.min) - it.qty, it.qty <= it.min ? 1 : 0);
-const lowItems = () => S.items.filter(isLow);
-const cats = () => ['Tous', ...[...new Set(S.items.map(i => i.cat || 'Divers'))].sort()];
+const dayInput = t => { const d = new Date(t); return new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const thisMonth = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); };
+const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').replace(/\s/g,'')); return isNaN(n) ? null : n; };
+const fmtNum = v => v === null || v === '' || v === undefined ? '' : String(v).replace('.', ',');
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2400); }
+const siteName = id => (S.sites.find(s => s.id === id) || {name:'Site inconnu'}).name;
+const typeLabel = t => t === 'ca' ? 'Contrôle d\'accès' : 'Alarme';
+const typeIcon = t => t === 'ca' ? '🚪' : '🚨';
 
-/* ============ Notifications internes ============ */
-function checkThreshold(it, before){
-  // Passage sous le seuil → notification
-  if (it.qty <= it.min && before > it.min) {
-    S.notifs.unshift({id:uid(), t:Date.now(), itemId:it.id, read:false,
-      msg:`⚠️ ${it.name} est passé sous le seuil (${it.qty} restant, seuil ${it.min}). À recommander.`});
-    toast(`⚠️ ${it.name} à recommander`);
-  }
-  if (it.qty === 0 && before > 0) {
-    S.notifs.unshift({id:uid(), t:Date.now(), itemId:it.id, read:false,
-      msg:`🚫 ${it.name} est en rupture dans le camion.`});
-  }
-  // Retour au-dessus du seuil → on réinitialise le statut "commandé"
-  if (it.qty > it.min && !pendingQty(it.id)) it.ordered = false;
-  S.notifs = S.notifs.slice(0, 200);
+/* ============ Âge des batteries ============ */
+function ageMonths(pose){
+  if (!pose) return null;
+  const [y, m] = pose.split('-').map(Number); if (!y || !m) return null;
+  const d = new Date(); return (d.getFullYear() - y) * 12 + (d.getMonth() + 1 - m);
 }
-function updateBadges(){
-  const unread = S.notifs.filter(n => !n.read).length;
-  const low = lowItems().filter(i => !i.ordered).length;
-  $('bellBadge').hidden = !unread; $('bellBadge').textContent = unread;
-  $('orderBadge').hidden = !low; $('orderBadge').textContent = low;
+function ageText(mo){
+  if (mo === null) return 'date de pose inconnue';
+  if (mo < 0) return 'date future';
+  const y = Math.floor(mo / 12), m = mo % 12;
+  return (y ? y + ' an' + (y > 1 ? 's' : '') : '') + (y && m ? ' ' : '') + (m || !y ? m + ' mois' : '');
 }
-
-/* ============ Mouvements ============ */
-function move(id, delta, note, quiet){
-  const it = S.items.find(i => i.id === id); if (!it || !delta) return;
-  const before = it.qty;
-  it.qty = Math.max(0, it.qty + delta);
-  const real = it.qty - before; if (!real) return;
-  S.history.unshift({id:uid(), t:Date.now(), itemId:id, name:it.name, delta:real, after:it.qty, note:note||''});
-  S.history = S.history.slice(0, 1000);
-  checkThreshold(it, before);
-  if (!quiet) { save(); render(); }
+function batStatus(b){ // 'bad' | 'warn' | 'ok' | 'unknown'
+  const mo = ageMonths(b.pose); if (mo === null) return 'unknown';
+  const lim = (+S.settings.ageYears || 4) * 12, warn = +S.settings.warnMonths || 6;
+  return mo >= lim ? 'bad' : (mo >= lim - warn ? 'warn' : 'ok');
+}
+const fmtPose = p => p ? p.split('-').reverse().join('/') : '—';
+function batPill(b){
+  const st = batStatus(b);
+  const lab = {bad: '⚠️ à remplacer', warn: '⏳ à prévoir', ok: '✓', unknown: '? date'}[st];
+  return `<span class="pill ${st === 'unknown' ? 'info' : st}">12V ${b.cap}Ah · ${fmtPose(b.pose)} · ${b.pose ? ageText(ageMonths(b.pose)) : ''} ${lab}</span>`;
 }
 
 /* ============ Navigation ============ */
-function go(t){
-  tab = t;
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
-  $('fab').style.display = t === 'stock' ? '' : 'none';
+let tab = 'ves', curVe = null;
+function go(t, veId){
+  tab = t; curVe = veId || null;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === (t === 've' ? 'ves' : t)));
   render(); window.scrollTo(0,0);
 }
 function render(){
-  ({stock:renderStock, order:renderOrder, history:renderHistory, settings:renderSettings})[tab]();
-  updateBadges();
+  const ve = curVe && S.ves.find(v => v.id === curVe);
+  if (tab === 've' && !ve) tab = 'ves';
+  $('backBtn').hidden = tab !== 've';
+  $('title').textContent = tab === 've' ? siteName(ve.siteId) : '🔋 Batteries VE';
+  $('fab').style.display = (tab === 'ves' || tab === 've') ? '' : 'none';
+  ({ves: renderVes, ve: () => renderVe(ve), bats: renderBats, settings: renderSettings})[tab]();
+  updateBadges(); odUi();
 }
+function fabAction(){ tab === 've' ? addCoffret() : newVe(); }
 
-/* ============ Vue Stock ============ */
-function renderStock(){
-  const q = search.toLowerCase();
-  const list = S.items
-    .filter(i => catFilter === 'Tous' || (i.cat || 'Divers') === catFilter)
-    .filter(i => !q || (i.name + ' ' + (i.ref||'') + ' ' + (i.cat||'')).toLowerCase().includes(q))
-    .sort((a,b) => (isLow(b) - isLow(a)) || a.name.localeCompare(b.name,'fr',{numeric:true}));
-  const lowN = lowItems().filter(i => !i.ordered).length;
-  $('view').innerHTML = `
-    ${safetyBanner()}
-    ${openOrders().length ? `<div class="alertbar infobar" onclick="go('order')">📦 <div class="grow"><b>${openOrders().length} commande${openOrders().length>1?'s':''}</b> en attente de réception</div>›</div>` : ''}
-    ${lowN ? `<div class="alertbar" onclick="go('order')">⚠️ <div class="grow"><b>${lowN} article${lowN>1?'s':''}</b> sous le seuil — à recommander</div>›</div>` : ''}
-    <div class="toolbar"><input type="search" placeholder="Rechercher (nom, réf…)" value="${esc(search)}" oninput="search=this.value;renderStockList()"></div>
-    <div class="chips">${cats().map(c => `<button class="chip ${c===catFilter?'on':''}" onclick="catFilter='${esc(c)}';render()">${esc(c)}</button>`).join('')}</div>
-    <div id="stockList"></div>`;
-  renderStockList(list);
+/* ============ Liste des VE ============ */
+function veProgress(ve){
+  const n = ve.coffrets.length, d = ve.coffrets.filter(c => coffretDone(c)).length;
+  return {n, d};
 }
-function renderStockList(list){
-  if (!list) { // appelé par la recherche
-    const q = search.toLowerCase();
-    list = S.items.filter(i => catFilter === 'Tous' || (i.cat||'Divers') === catFilter)
-      .filter(i => !q || (i.name+' '+(i.ref||'')+' '+(i.cat||'')).toLowerCase().includes(q))
-      .sort((a,b) => (isLow(b)-isLow(a)) || a.name.localeCompare(b.name,'fr',{numeric:true}));
-  }
-  $('stockList').innerHTML = list.length ? list.map(it => {
-    const cls = it.qty <= it.min ? 'low' : (it.qty <= it.min * 1.5 ? 'mid' : 'ok');
-    return `<div class="card row">
-      <div class="grow" onclick="openMove('${it.id}')">
-        <div class="name">${esc(it.name)}${pendingQty(it.id)?`<span class="tag info">${pendingQty(it.id)} attendu${pendingQty(it.id)>1?'s':''}</span>`:it.ordered?'<span class="tag info">Commandé</span>':(isLow(it)?'<span class="tag bad">Bas</span>':'')}</div>
-        <div class="sub">${esc(it.ref||'')}${it.ref?' · ':''}${esc(it.cat||'Divers')} · seuil ${it.min}${it.target?' / cible '+it.target:''}</div>
-      </div>
-      <button class="round minus" onclick="move('${it.id}',-1)">−</button>
-      <div class="qty ${cls}">${it.qty}</div>
-      <button class="round plus" onclick="move('${it.id}',1)">+</button>
-    </div>`;
-  }).join('') : `<div class="empty">${S.items.length ? 'Aucun résultat.' : `Ton stock est vide.<br>Appuie sur <b>+</b> pour ajouter ton premier article.
-      ${S.history.length ? '' : `<br><br>Tu avais déjà des données ?<button class="btn primary block" onclick="$('impGlobal').click()">📥 Restaurer une sauvegarde</button>
-      <div class="hint">Si tes articles ont disparu, c'est souvent que l'appli a été ouverte depuis un autre fichier ou un autre navigateur. Ouvre-la toujours au même endroit, ou restaure ta dernière sauvegarde.</div>`}`}</div>`;
-}
-
-/* ============ Fiche article / mouvement ============ */
-function openSheet(html){ $('sheet').innerHTML = html; $('sheetBg').classList.add('show'); $('undoBar').classList.remove('show'); }
-function sheetClosedUndo(){ if (undoSnap) $('undoBar').classList.add('show'); }
-function closeSheet(){ $('sheetBg').classList.remove('show'); sheetClosedUndo(); }
-
-function openMove(id){
-  const it = S.items.find(i => i.id === id);
-  const last = S.history.filter(h => h.itemId === id).slice(0,5);
-  openSheet(`
-    <h3>${esc(it.name)}</h3>
-    <div class="sub">${esc(it.ref||'')} ${it.ref?'·':''} ${esc(it.cat||'Divers')} — en stock : <b>${it.qty}</b> (seuil ${it.min})</div>
-    ${(() => { const st = usageStats(), g = st.spanDays >= MIN_DAYS && suggestFor(it, st);
-      return g ? `<div class="sub">📊 Conso ~${fmtRate(g.perWeek)}/semaine · conseillé : seuil <b>${g.min}</b>, cible <b>${g.target}</b>${g.min !== it.min || g.target !== +it.target ? ` <a href="#" onclick="event.preventDefault();applyOneAuto('${it.id}')">appliquer</a>` : ' ✓'}</div>` : ''; })()}
-    <label>Quantité</label>
-    <input id="mvQty" type="number" inputmode="numeric" min="1" value="1">
-    <label>Note (chantier, client…) – facultatif</label>
-    <input id="mvNote" placeholder="ex. Chantier Dupont">
-    <div class="grid2" style="margin-top:12px">
-      <button class="btn danger" onclick="doMove('${id}',-1)">− Retirer</button>
-      <button class="btn ok" onclick="doMove('${id}',1)">+ Ajouter</button>
-    </div>
-    ${last.length ? `<label style="margin-top:16px">Derniers mouvements</label>${last.map(h=>`<div class="sub">${fmtDate(h.t)} : <b>${h.delta>0?'+':''}${h.delta}</b> ${esc(h.note)}</div>`).join('')}` : ''}
-    <button class="btn block" onclick="openItem('${id}')">✏️ Modifier l'article</button>
-    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
-}
-function doMove(id, sign){
-  const n = parseInt($('mvQty').value, 10);
-  if (!n || n < 1) return toast('Quantité invalide');
-  move(id, sign * n, $('mvNote').value.trim());
-  closeSheet(); toast(sign > 0 ? `+${n} ajouté` : `−${n} retiré`);
-}
-
-function openItem(id){
-  const it = id ? S.items.find(i => i.id === id) : {name:'',ref:'',cat:S.lastCat||'',qty:0,min:1,target:''};
-  openSheet(`
-    <h3>${id ? 'Modifier l\'article' : 'Nouvel article'}</h3>
-    <label>Désignation *</label><input id="fName" value="${esc(it.name)}" placeholder="ex. Détecteur de mouvement">
-    <div class="grid2">
-      <div><label>Référence</label><input id="fRef" value="${esc(it.ref)}" placeholder="ex. DET-200"></div>
-      <div><label>Catégorie</label><input id="fCat" list="catList" value="${esc(it.cat)}" placeholder="ex. Détection">
-        <datalist id="catList">${cats().slice(1).map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
-    </div>
-    <div class="grid3">
-      <div><label>En stock</label><input id="fQty" type="number" inputmode="numeric" min="0" value="${it.qty}"></div>
-      <div><label>Seuil alerte</label><input id="fMin" type="number" inputmode="numeric" min="0" value="${it.min}"></div>
-      <div><label>Stock cible</label><input id="fTarget" type="number" inputmode="numeric" min="0" value="${it.target}"></div>
-    </div>
-    <div class="hint">Alerte quand le stock ≤ seuil. La quantité à commander = stock cible − stock actuel.</div>
-    <button class="btn primary block" onclick="saveItem('${id||''}')">Enregistrer</button>
-    ${id ? `<button class="btn danger block" onclick="delItem('${id}')">Supprimer l'article</button>` : ''}
-    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
-  setTimeout(()=>{ if(!id) $('fName').focus(); }, 50);
-}
-function saveItem(id){
-  const name = $('fName').value.trim(); if (!name) return toast('La désignation est obligatoire');
-  const data = {
-    name, ref: $('fRef').value.trim(), cat: $('fCat').value.trim() || 'Divers',
-    qty: Math.max(0, parseInt($('fQty').value,10) || 0),
-    min: Math.max(0, parseInt($('fMin').value,10) || 0),
-    target: parseInt($('fTarget').value,10) || ''
-  };
-  S.lastCat = data.cat;
-  if (id) {
-    const it = S.items.find(i => i.id === id); const before = it.qty;
-    if (data.qty !== before) S.history.unshift({id:uid(), t:Date.now(), itemId:id, name, delta:data.qty-before, after:data.qty, note:'Correction inventaire'});
-    Object.assign(it, data); checkThreshold(it, before > it.min ? before : it.min + 1);
-  } else {
-    const it = {id:uid(), ordered:false, ...data}; S.items.push(it);
-    if (isLow(it)) checkThreshold(it, it.min + 1);
-  }
-  save(); closeSheet(); render(); toast('Article enregistré');
-}
-function delItem(id){
-  if (!confirm('Supprimer cet article du stock ?')) return;
-  snapshot();
-  S.items = S.items.filter(i => i.id !== id); save(); closeSheet(); render(); offerUndo('Article supprimé');
-}
-
-/* ============ Vue À commander ============ */
-let selection = {}; // id -> qty à commander
-function renderOrder(){
-  const low = lowItems().sort((a,b) => (a.ordered - b.ordered) || a.name.localeCompare(b.name,'fr',{numeric:true}));
-  low.forEach(it => { if (!(it.id in selection)) selection[it.id] = it.ordered ? 0 : toOrderQty(it); });
-  const sel = low.filter(i => selection[i.id] > 0);
-  const oo = openOrders();
-  $('view').innerHTML = `
-    ${oo.length ? `<h2>📦 En attente de réception</h2>${oo.map(orderCard).join('')}` : ''}
-    <h2>Articles à recommander</h2>
-    ${low.length ? low.map(it => `
-      <div class="card row">
-        <input type="checkbox" class="check" ${selection[it.id]>0?'checked':''} onchange="selection['${it.id}']=this.checked?${toOrderQty(it)}:0;renderOrder()">
-        <div class="grow">
-          <div class="name">${esc(it.name)}</div>
-          <div class="sub">${esc(it.ref||'')}${it.ref?' · ':''}stock ${it.qty} / seuil ${it.min}${pendingQty(it.id)?` · <b>⏳ ${pendingQty(it.id)} attendu${pendingQty(it.id)>1?'s':''}</b>`:(it.ordered?' · <b>déjà demandé</b>':'')}</div>
-        </div>
-        <input class="smallnum" type="number" inputmode="numeric" min="0" value="${selection[it.id]}" onchange="selection['${it.id}']=Math.max(0,parseInt(this.value,10)||0);renderOrder()">
-      </div>`).join('') : '<div class="empty">✅ Rien à recommander pour le moment.</div>'}
-    ${low.length ? `
-      <button class="btn primary block" ${sel.length?'':'disabled style="opacity:.5"'} onclick="previewMail()">✉️ Envoyer au responsable (${sel.length})</button>
-      <button class="btn block" onclick="addManual()">+ Ajouter un article hors seuil</button>` : `<button class="btn block" onclick="addManual()">+ Ajouter un article à la demande</button>`}`;
-}
-function addManual(){
-  const others = S.items.filter(i => !isLow(i));
-  if (!others.length) return toast('Aucun autre article dans le stock');
-  openSheet(`<h3>Ajouter à la commande</h3>
-    <label>Article</label><select id="mItem">${others.sort((a,b)=>a.name.localeCompare(b.name,'fr',{numeric:true})).map(i=>`<option value="${i.id}">${esc(i.name)} (stock ${i.qty})</option>`).join('')}</select>
-    <label>Quantité à commander</label><input id="mQty" type="number" inputmode="numeric" min="1" value="1">
-    <button class="btn primary block" onclick="manualOk()">Ajouter</button>
-    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
-}
-let extraOrder = {}; // articles ajoutés manuellement
-function manualOk(){
-  const id = $('mItem').value, n = parseInt($('mQty').value,10) || 0;
-  if (n < 1) return toast('Quantité invalide');
-  extraOrder[id] = n; closeSheet(); previewMail();
-}
-
-/* ============ Mail ============ */
-function fill(tpl){ return (tpl||'').replaceAll('{date}', today()).replaceAll('{nom}', S.settings.tech || ''); }
-function orderLines(){
-  const lines = [];
-  lowItems().forEach(it => { if (selection[it.id] > 0) lines.push({it, n:selection[it.id]}); });
-  Object.entries(extraOrder).forEach(([id,n]) => { const it = S.items.find(i=>i.id===id); if (it && n>0) lines.push({it, n}); });
-  return lines;
-}
-function buildMail(){
-  const st = S.settings;
-  const lines = orderLines().map(({it,n}) => `- ${it.name}${it.ref?' (réf. '+it.ref+')':''} : ${n}`);
-  const body = `${fill(st.intro)}\n\n${lines.join('\n')}\n\n${fill(st.outro)}`;
-  return {subject: fill(st.subject), body};
-}
-function previewMail(){
-  const lines = orderLines();
-  if (!lines.length) return toast('Sélectionne au moins un article');
-  const st = S.settings; const m = buildMail();
-  openSheet(`<h3>Aperçu du mail</h3>
-    <div class="sub">À : <b>${esc(st.to || '— non renseigné —')}</b>${st.cc?' · Cc : '+esc(st.cc):''}</div>
-    <div class="sub" style="margin-bottom:8px">Objet : <b>${esc(m.subject)}</b></div>
-    <div class="preview">${esc(m.body)}</div>
-    ${!st.to ? '<div class="hint" style="color:var(--bad)">⚠️ Renseigne l\'adresse de ton responsable dans Réglages.</div>' : ''}
-    <button class="btn primary block" onclick="sendMail()">📨 Ouvrir dans ma messagerie</button>
-    <button class="btn block" onclick="copyMail()">📋 Copier le texte</button>
-    ${Object.keys(extraOrder).length ? '<button class="btn block" onclick="extraOrder={};closeSheet();renderOrder()">Retirer les articles ajoutés à la main</button>' : ''}
-    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
-}
-function sendMail(){
-  const st = S.settings, m = buildMail();
-  let url = `mailto:${encodeURIComponent(st.to).replace(/%40/g,'@').replace(/%2C/g,',')}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`;
-  if (st.cc) url += `&cc=${encodeURIComponent(st.cc).replace(/%40/g,'@').replace(/%2C/g,',')}`;
-  window.location.href = url;
-  setTimeout(() => {
-    openSheet(`<h3>Mail envoyé ?</h3>
-      <div class="sub">Si tu as bien envoyé le mail, je marque ces articles comme « commandés » : ils ne déclencheront plus d'alerte tant qu'ils ne sont pas réapprovisionnés.</div>
-      <button class="btn ok block" onclick="markOrdered()">✅ Oui, marquer comme commandés</button>
-      <button class="btn block" onclick="closeSheet()">Non, pas encore</button>`);
-  }, 800);
-}
-function markOrdered(){
-  const lines = orderLines();
-  snapshot();
-  lines.forEach(({it}) => it.ordered = true);
-  // Commande en attente de réception
-  S.orders = S.orders || [];
-  S.orders.unshift({id:uid(), t:Date.now(), status:'open',
-    lines: lines.map(({it,n}) => ({itemId:it.id, name:it.name, ref:it.ref||'', qty:n, received:0}))});
-  S.orders = S.orders.slice(0, 50);
-  S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`📨 Demande envoyée au responsable : ${lines.map(l=>l.it.name+' ×'+l.n).join(', ')}`});
-  selection = {}; extraOrder = {};
-  save(); closeSheet(); render(); offerUndo('Commande marquée comme envoyée');
-}
-
-
-/* ============ Seuils automatiques ============ */
-// Retraits « réels » : on ignore les corrections d'inventaire, les imports et les réceptions.
-const NOT_USAGE = /^(Correction inventaire|Import inventaire|Réception)/;
-const DAY = 864e5, WINDOW_DAYS = 56, MIN_DAYS = 7;
-function usageStats(){
-  const now = Date.now(), from = now - WINDOW_DAYS * DAY;
-  const hist = S.history.filter(h => h.t >= from);
-  const first = hist.length ? Math.min(...hist.map(h => h.t)) : now;
-  const spanDays = Math.max(1, (now - first) / DAY);
-  const per = {};
-  hist.forEach(h => {
-    if (h.delta >= 0 || NOT_USAGE.test(h.note || '')) return;
-    const u = per[h.itemId] || (per[h.itemId] = {out: 0, events: 0});
-    u.out += -h.delta; u.events++;
-  });
-  return {spanDays, per};
-}
-function suggestFor(it, st){
-  const lead = Math.max(1, +S.settings.leadDays || 7), cover = Math.max(1, +S.settings.coverWeeks || 2);
-  const u = st.per[it.id];
-  if (!u || u.events < 2) return null;                      // pas assez de retraits pour cet article
-  const perDay = u.out / Math.max(st.spanDays, MIN_DAYS);
-  const min = Math.max(1, Math.ceil(perDay * lead));
-  const target = Math.max(min + 1, Math.ceil(perDay * (lead + cover * 7)));
-  return {perWeek: perDay * 7, min, target};
-}
-const chg = (a, b) => String(a) === String(b) ? `<b>${b}</b> (inchangé)` : `<s>${a}</s> → <b>${b}</b>`;
-const fmtRate = w => w >= 10 ? Math.round(w) : (Math.round(w * 10) / 10).toString().replace('.', ',');
-function saveAutoParams(){
-  if ($('sLead')) S.settings.leadDays = Math.max(1, parseInt($('sLead').value, 10) || 7);
-  if ($('sCover')) S.settings.coverWeeks = Math.max(1, parseInt($('sCover').value, 10) || 2);
-  save();
-}
-let autoList = [];
-function openAutoThresholds(){
-  const st = usageStats();
-  if (st.spanDays < MIN_DAYS) {
-    const left = Math.ceil(MIN_DAYS - st.spanDays);
-    return openSheet(`<h3>📊 Seuils conseillés</h3>
-      <div class="sub">Il faut au moins <b>${MIN_DAYS} jours</b> d'utilisation pour estimer ta consommation. Encore environ <b>${left} jour${left>1?'s':''}</b> : continue à noter tes retraits, l'appli fera le calcul.</div>
-      <button class="btn block" onclick="closeSheet()">Fermer</button>`);
-  }
-  autoList = S.items.map(it => ({it, sug: suggestFor(it, st)})).filter(x => x.sug && (x.sug.min !== x.it.min || x.sug.target !== +x.it.target));
-  const noData = S.items.filter(it => !suggestFor(it, st)).length;
-  openSheet(`<h3>📊 Seuils conseillés</h3>
-    <div class="sub" style="margin-bottom:8px">Calculés sur ${Math.round(st.spanDays)} jours · livraison ${S.settings.leadDays || 7} j · autonomie ${S.settings.coverWeeks || 2} sem.</div>
-    ${autoList.length ? autoList.map((x, k) => `<div class="card row">
-      <input type="checkbox" class="check autochk" id="ac${k}" checked>
-      <label for="ac${k}" class="grow" style="margin:0;font-size:inherit;color:inherit;font-weight:normal">
-        <div class="name">${esc(x.it.name)}</div>
-        <div class="sub">~${fmtRate(x.sug.perWeek)} / semaine · seuil ${chg(x.it.min, x.sug.min)} · cible ${chg(x.it.target || '–', x.sug.target)}</div>
-      </label></div>`).join('')
-    : '<div class="empty">✅ Tes seuils correspondent déjà à ta consommation.</div>'}
-    ${noData ? `<div class="hint">${noData} article${noData>1?'s':''} sans assez de retraits pour un calcul fiable : seuils inchangés.</div>` : ''}
-    ${autoList.length ? `<button class="btn primary block" onclick="applyAutoThresholds()">✅ Appliquer les seuils cochés</button>` : ''}
-    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
-}
-function applyOneAuto(id){
-  const it = S.items.find(i => i.id === id), g = it && suggestFor(it, usageStats()); if (!g) return;
-  snapshot(); const before = it.qty; it.min = g.min; it.target = g.target;
-  checkThreshold(it, before > it.min ? before : it.min + 1);
-  save(); closeSheet(); render(); offerUndo(`📊 ${it.name} : seuil ${g.min}, cible ${g.target}`);
-}
-function applyAutoThresholds(){
-  const picked = autoList.filter((x, k) => $('ac' + k) && $('ac' + k).checked);
-  if (!picked.length) return toast('Coche au moins un article');
-  snapshot();
-  picked.forEach(({it, sug}) => {
-    const cur = S.items.find(i => i.id === it.id); if (!cur) return;
-    const before = cur.qty; cur.min = sug.min; cur.target = sug.target;
-    checkThreshold(cur, before > cur.min ? before : cur.min + 1);
-  });
-  save(); closeSheet(); render();
-  offerUndo(`📊 Seuils mis à jour pour ${picked.length} article${picked.length>1?'s':''}`);
-}
-
-/* ============ Annuler la dernière action ============ */
-// Une photo des données est prise avant chaque action importante ; « Annuler » la remet en place.
-let undoSnap = null, undoTimer = null;
-const UNDO_MS = 15000;
-function hideUndo(){ undoSnap = null; clearTimeout(undoTimer); $('undoBar').classList.remove('show'); document.body.classList.remove('undo-on'); }
-// Hauteur réelle du menu du bas (varie selon le téléphone / l'ordinateur)
-function setNavH(){ const n = document.querySelector('nav'); if (n) document.documentElement.style.setProperty('--navh', n.offsetHeight + 'px'); }
-window.addEventListener('resize', setNavH);
-function snapshot(){
-  undoSnap = {data: JSON.stringify(S), sel: JSON.stringify(selection), extra: JSON.stringify(extraOrder)};
-}
-function offerUndo(msg){
-  if (!undoSnap) return;
-  $('undoMsg').textContent = msg;
-  setNavH();
-  $('undoBar').classList.add('show'); document.body.classList.add('undo-on');
-  clearTimeout(undoTimer);
-  undoTimer = setTimeout(hideUndo, UNDO_MS);
-}
-function undo(){
-  if (!undoSnap) return toast('Rien à annuler');
-  S = JSON.parse(undoSnap.data);
-  selection = JSON.parse(undoSnap.sel); extraOrder = JSON.parse(undoSnap.extra);
-  hideUndo();
-  save(); closeSheet(); render(); toast('↩️ Action annulée');
-}
-// Ctrl+Z sur ordinateur
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && undoSnap && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); undo(); }
-});
-
-/* ============ Réception de commande ============ */
-const openOrders = () => (S.orders || []).filter(o => o.status === 'open');
-const remaining = l => Math.max(0, l.qty - (l.received || 0));
-const fmtDay = t => new Date(t).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
-function pendingQty(itemId){
-  return openOrders().reduce((s, o) => s + o.lines.filter(l => l.itemId === itemId).reduce((a, l) => a + remaining(l), 0), 0);
-}
-const expandedOrders = {};
-function orderCard(o){
-  const tot = o.lines.reduce((s,l) => s + l.qty, 0), rest = o.lines.reduce((s,l) => s + remaining(l), 0);
-  const partial = rest < tot, open = expandedOrders[o.id], MAX = 5;
-  // Articles restant à recevoir d'abord
-  const lines = o.lines.slice().sort((a,b) => (!remaining(a)) - (!remaining(b)));
-  const shown = open ? lines : lines.slice(0, MAX);
-  return `<div class="card">
-    <div class="name">Commande du ${fmtDay(o.t)}${partial ? '<span class="tag bad">Partielle</span>' : ''}</div>
-    <div class="sub">${o.lines.length} article${o.lines.length>1?'s':''} · ${tot-rest}/${tot} pièce${tot>1?'s':''} reçue${tot>1?'s':''}</div>
-    <div class="grid2" style="margin-top:8px">
-      <button class="btn primary" onclick="openReception('${o.id}')">📦 Réceptionner</button>
-      ${o.lines.every(l => !l.received) ? `<button class="btn" onclick="cancelOrder('${o.id}')">↩️ Annuler la commande</button>`
-        : `<button class="btn" onclick="closeOrder('${o.id}')">🗂️ Clôturer</button>`}
-    </div>
-    <div class="sub" style="margin:10px 0 0;line-height:1.6">${shown.map(l =>
-      `${remaining(l) ? '⏳' : '✅'} ${esc(l.name)} : <b>${l.received||0}/${l.qty}</b>`).join('<br>')}</div>
-    ${lines.length > MAX ? `<button class="btn block" style="padding:8px" onclick="expandedOrders['${o.id}']=!expandedOrders['${o.id}'];renderOrder()">${open ? '▴ Réduire' : `▾ Voir les ${lines.length - MAX} autres articles`}</button>` : ''}
+const coffretDone = c => num(c.vOn) !== null && num(c.vOff) !== null && num(c.conso) !== null;
+function veCard(ve){
+  const {n, d} = veProgress(ve);
+  const bad = ve.coffrets.reduce((s, c) => s + c.bats.filter(b => batStatus(b) === 'bad').length, 0);
+  return `<div class="card tap" onclick="go('ve','${ve.id}')">
+    <div class="row"><div class="grow">
+      <div class="name">${ve.closed ? '✅' : '🟢'} ${esc(siteName(ve.siteId))}</div>
+      <div class="sub">${ve.closed ? `Du ${fmtDay(ve.start)} au ${fmtDay(ve.end)}` : `En cours depuis le ${fmtDay(ve.start)}`} · ${n} coffret${n>1?'s':''}${bad ? ` · <b style="color:var(--bad)">${bad} batterie${bad>1?'s':''} à remplacer</b>` : ''}</div>
+    </div><div style="font-size:22px;color:var(--muted)">›</div></div>
+    ${!ve.closed && n ? `<div class="prog"><div style="width:${Math.round(d/n*100)}%"></div></div><div class="sub">${d}/${n} coffret${n>1?'s':''} relevé${d>1?'s':''}</div>` : ''}
   </div>`;
 }
-function openReception(id){
-  const o = S.orders.find(x => x.id === id); if (!o) return;
-  const nothingYet = o.lines.every(l => !l.received);
-  openSheet(`<h3>Réception — commande du ${fmtDay(o.t)}</h3>
-    <div class="sub" style="margin-bottom:8px">Coche chaque article reçu. La quantité se remplit toute seule : corrige-la si tu en as reçu moins.</div>
-    ${o.lines.map((l,k) => remaining(l) ? `<div class="card row rcvline" id="rcvl${k}">
-      <input type="checkbox" class="check rcvchk" id="rcvc${k}" onchange="rcvCheck(${k},${remaining(l)})">
-      <label for="rcvc${k}" class="grow" style="margin:0;font-size:inherit;color:inherit;font-weight:normal">
-        <div class="name">${esc(l.name)}</div>
-        <div class="sub">commandé ${l.qty}${l.received ? ` · déjà reçu ${l.received}` : ''}${S.items.some(i=>i.id===l.itemId) ? '' : ' · article supprimé'}</div>
-      </label>
-      <input class="smallnum rcv" id="rcv${k}" type="number" inputmode="numeric" min="0" max="${remaining(l)}" value="0" oninput="rcvQty(${k},${remaining(l)})">
-    </div>` : '').join('')}
-    <button class="btn block" onclick="rcvAll(true)">☑️ Tout cocher (tout est arrivé)</button>
-    <button class="btn ok block" id="rcvOk" onclick="applyReception('${id}')">✅ Valider la réception</button>
-    <button class="btn block" onclick="closeOrder('${id}')">🗂️ Clôturer sans attendre le reste</button>
-    ${nothingYet ? `<button class="btn block" onclick="cancelOrder('${id}')">↩️ Annuler cette commande (envoyée par erreur)</button>` : ''}
-    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
-  rcvCount();
-}
-function rcvCheck(k, max){
-  const c = $('rcvc'+k), q = $('rcv'+k);
-  q.value = c.checked ? (parseInt(q.value,10) > 0 ? q.value : max) : 0;
-  rcvCount();
-}
-function rcvQty(k, max){
-  const q = $('rcv'+k); let v = parseInt(q.value,10) || 0;
-  if (v > max) { v = max; q.value = max; }
-  $('rcvc'+k).checked = v > 0;
-  rcvCount();
-}
-function rcvAll(on){
-  document.querySelectorAll('.rcvchk').forEach(c => { c.checked = on; c.dispatchEvent(new Event('change')); });
-}
-function rcvCount(){
-  let n = 0, a = 0;
-  document.querySelectorAll('.rcv').forEach(i => { const v = parseInt(i.value,10) || 0; if (v) { n += v; a++; } });
-  document.querySelectorAll('.rcvline').forEach(l => l.style.borderColor = l.querySelector('.rcvchk').checked ? 'var(--ok)' : '');
-  const b = $('rcvOk'); if (!b) return;
-  b.textContent = a ? `✅ Valider : ${a} article${a>1?'s':''} (${n} pièce${n>1?'s':''})` : '✅ Valider la réception';
-  b.disabled = !a; b.style.opacity = a ? '' : '.5';
-}
-function cancelOrder(id){
-  const o = S.orders.find(x => x.id === id); if (!o || o.lines.some(l => l.received)) return;
-  snapshot();
-  S.orders = S.orders.filter(x => x !== o);
-  refreshOrdered(o);
-  S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`↩️ Commande du ${fmtDay(o.t)} annulée`});
-  save(); closeSheet(); render();
-  offerUndo('Commande annulée');
-}
-function refreshOrdered(o){
-  o.lines.forEach(l => {
-    const it = S.items.find(i => i.id === l.itemId); if (!it) return;
-    it.ordered = pendingQty(it.id) > 0;
-    if (!it.ordered) delete selection[it.id]; // redevient proposé dans « À commander »
-  });
-}
-function applyReception(id){
-  const o = S.orders.find(x => x.id === id); if (!o) return;
-  if (!document.querySelector('.rcv') || ![...document.querySelectorAll('.rcv')].some(i => parseInt(i.value,10) > 0)) return toast('Coche au moins un article reçu');
-  snapshot();
-  let n = 0;
-  o.lines.forEach((l,k) => {
-    const inp = $('rcv' + k); if (!inp) return;
-    const q = Math.min(remaining(l), Math.max(0, parseInt(inp.value, 10) || 0));
-    if (!q) return;
-    l.received = (l.received || 0) + q;
-    if (S.items.some(i => i.id === l.itemId)) move(l.itemId, q, `Réception commande du ${fmtDay(o.t)}`, true);
-    n += q;
-  });
-  if (!n) return toast('Aucune quantité saisie');
-  const done = o.lines.every(l => !remaining(l));
-  if (done) { o.status = 'done'; o.doneAt = Date.now(); }
-  refreshOrdered(o);
-  S.notifs.unshift({id:uid(), t:Date.now(), read:true,
-    msg: done ? `📦 Commande du ${fmtDay(o.t)} entièrement reçue` : `📦 Réception partielle de la commande du ${fmtDay(o.t)} (${n} pièce${n>1?'s':''})`});
-  save(); closeSheet(); render();
-  offerUndo(done ? 'Commande complète reçue ✓' : `${n} pièce${n>1?'s':''} reçue${n>1?'s':''} — le reste reste en attente`);
-}
-function closeOrder(id){
-  const o = S.orders.find(x => x.id === id); if (!o) return;
-  if (!confirm('Clôturer cette commande ? Les quantités non reçues ne seront plus attendues.')) return;
-  snapshot();
-  o.status = 'closed'; o.doneAt = Date.now();
-  refreshOrdered(o);
-  S.notifs.unshift({id:uid(), t:Date.now(), read:true, msg:`🗂️ Commande du ${fmtDay(o.t)} clôturée (reste non reçu)`});
-  save(); closeSheet(); render(); offerUndo('Commande clôturée');
-}
-async function copyMail(){
-  const m = buildMail(); const txt = `Objet : ${m.subject}\n\n${m.body}`;
-  try { await navigator.clipboard.writeText(txt); toast('Texte copié'); }
-  catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Texte copié'); }
-}
-
-/* ============ Historique ============ */
-let histFilter = 'all';
-function renderHistory(){
-  const list = S.history.filter(h => histFilter==='all' || (histFilter==='out'?h.delta<0:h.delta>0)).slice(0,300);
-  const now = Date.now(), week = 7*864e5;
-  const out7 = S.history.filter(h => h.delta<0 && now-h.t<week).reduce((s,h)=>s-h.delta,0);
-  const in7 = S.history.filter(h => h.delta>0 && now-h.t<week).reduce((s,h)=>s+h.delta,0);
+function renderVes(){
+  const open = S.ves.filter(v => !v.closed).sort((a,b) => b.start - a.start);
+  const closed = S.ves.filter(v => v.closed).sort((a,b) => (b.end||b.start) - (a.end||a.start));
+  const alerts = allBatteries().filter(x => x.st === 'bad').length;
   $('view').innerHTML = `
-    <div class="grid2" style="margin-bottom:10px">
-      <div class="card" style="margin:0;text-align:center"><div class="sub">Retirés (7 j)</div><div class="qty low">${out7}</div></div>
-      <div class="card" style="margin:0;text-align:center"><div class="sub">Ajoutés (7 j)</div><div class="qty ok">${in7}</div></div>
-    </div>
-    <div class="chips">
-      ${[['all','Tout'],['out','Retraits'],['in','Ajouts']].map(([k,l])=>`<button class="chip ${histFilter===k?'on':''}" onclick="histFilter='${k}';renderHistory()">${l}</button>`).join('')}
-    </div>
-    ${list.length ? list.map(h => `<div class="card row hist">
-      <div class="grow"><div class="name">${esc(h.name)}</div><div class="sub">${fmtDate(h.t)}${h.note?' · '+esc(h.note):''} · reste ${h.after}</div></div>
-      <div class="d ${h.delta>0?'p':'m'}">${h.delta>0?'+':''}${h.delta}</div></div>`).join('') : '<div class="empty">Aucun mouvement.</div>'}`;
+    ${!storageOK ? `<div class="alertbar bad">⛔ Les données ne sont pas enregistrées sur ce navigateur. Ouvre l'appli avec Chrome.</div>` : ''}
+    ${alerts ? `<div class="alertbar bad tap" onclick="go('bats')">⚠️ <div class="grow"><b>${alerts} batterie${alerts>1?'s':''}</b> de plus de ${S.settings.ageYears} ans à remplacer</div>›</div>` : ''}
+    <h2>VE en cours</h2>
+    ${open.length ? open.map(veCard).join('') : `<div class="card empty">Aucune VE en cours.<br><button class="btn primary block" onclick="newVe()">+ Démarrer une VE</button></div>`}
+    ${closed.length ? `<h2>Historique</h2>${closed.slice(0, 40).map(veCard).join('')}` : ''}`;
 }
 
-/* ============ Notifications ============ */
-function openNotifs(){
-  const list = S.notifs.slice(0,100);
-  openSheet(`<h3>Notifications</h3>
-    ${list.length ? list.map(n => `<div class="card notif ${n.read?'read':''}"><div>${esc(n.msg)}</div><div class="sub">${fmtDate(n.t)}</div></div>`).join('') : '<div class="empty">Aucune notification.</div>'}
-    ${lowItems().some(i=>!i.ordered) ? '<button class="btn primary block" onclick="closeSheet();go(\'order\')">🛒 Voir les articles à commander</button>' : ''}
-    ${list.length ? '<button class="btn block" onclick="S.notifs=[];save();closeSheet()">Tout effacer</button>' : ''}
+/* ============ Nouvelle VE ============ */
+function newVe(){
+  openSheet(`<h3>Nouvelle VE</h3>
+    <label>Site</label>
+    <input id="nvSite" list="siteList" placeholder="ex. Résidence Les Tilleuls" autocomplete="off">
+    <datalist id="siteList">${S.sites.slice().sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(s => `<option value="${esc(s.name)}">`).join('')}</datalist>
+    <div class="hint">Si le site existe déjà, ses coffrets et batteries sont repris automatiquement : il ne reste qu'à saisir les mesures.</div>
+    <label>Date de début</label>
+    <input id="nvDate" type="date" value="${dayInput(Date.now())}">
+    <button class="btn primary block" onclick="createVe()">Démarrer la VE</button>
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+  setTimeout(() => $('nvSite') && $('nvSite').focus(), 60);
+}
+function createVe(){
+  const name = $('nvSite').value.trim(); if (!name) return toast('Indique le nom du site');
+  let site = S.sites.find(s => s.name.toLowerCase() === name.toLowerCase());
+  if (!site) { site = {id: uid(), name}; S.sites.push(site); }
+  const start = $('nvDate').value ? new Date($('nvDate').value + 'T08:00').getTime() : Date.now();
+  // Reprise de la dernière VE du site
+  const prev = S.ves.filter(v => v.siteId === site.id).sort((a,b) => b.start - a.start)[0];
+  const coffrets = prev ? prev.coffrets.map(c => ({id: uid(), label: c.label, loc: c.loc, type: c.type,
+    bats: c.bats.map(b => ({id: uid(), cap: b.cap, pose: b.pose, replaced: false})), vOn: '', vOff: '', conso: '', unit: c.unit || 'mA', note: ''})) : [];
+  const ve = {id: uid(), siteId: site.id, start, end: null, closed: false, coffrets, carnet: '', carnetEdited: false};
+  S.ves.push(ve); save(); closeSheet(); go('ve', ve.id);
+  toast(prev ? `${coffrets.length} coffret${coffrets.length>1?'s':''} repris de la VE du ${fmtDay(prev.start)}` : 'VE démarrée : ajoute tes coffrets avec +');
+}
+
+/* ============ Détail d'une VE ============ */
+function coffretCard(ve, c, i){
+  const done = coffretDone(c);
+  return `<div class="card tap" onclick="editCoffret('${c.id}')">
+    <div class="row"><div class="grow">
+      <div class="name">${typeIcon(c.type)} ${esc(c.label || 'Coffret ' + (i+1))} ${done ? '<span class="pill ok">relevé ✓</span>' : '<span class="pill warn">à relever</span>'}</div>
+      <div class="sub">${typeLabel(c.type)}${c.loc ? ' · ' + esc(c.loc) : ''}</div>
+    </div><div style="font-size:22px;color:var(--muted)">›</div></div>
+    <div>${c.bats.length ? c.bats.map(b => batPill(b) + (b.replaced ? '<span class="pill info">🔁 remplacée</span>' : '')).join('') : '<span class="pill info">aucune batterie</span>'}</div>
+    ${done || c.vOn || c.vOff || c.conso ? `<div class="meas"><span>⚡ ${fmtNum(c.vOn) || '–'} V</span><span>🔌 ${fmtNum(c.vOff) || '–'} V</span><span>➰ ${fmtNum(c.conso) || '–'} ${c.unit}</span></div>` : ''}
+    ${c.note ? `<div class="sub">📝 ${esc(c.note)}</div>` : ''}
+  </div>`;
+}
+function renderVe(ve){
+  const {n, d} = veProgress(ve);
+  $('view').innerHTML = `
+    <div class="card">
+      <div class="sub">${ve.closed ? `✅ Clôturée · du ${fmtDay(ve.start)} au ${fmtDay(ve.end)}` : `🟢 En cours depuis le ${fmtDay(ve.start)}`}</div>
+      ${n ? `<div class="prog"><div style="width:${Math.round(d/n*100)}%"></div></div><div class="sub">${d}/${n} coffret${n>1?'s':''} relevé${d>1?'s':''}</div>` : ''}
+      <div class="grid2" style="margin-top:6px">
+        <button class="btn" onclick="showRecap('${ve.id}')">📋 Récap</button>
+        <button class="btn" onclick="showCarnet('${ve.id}')">📒 Carnet</button>
+      </div>
+      <button class="btn primary block" onclick="makePdf('${ve.id}')">📄 Rapport PDF</button>
+    </div>
+    <h2>Coffrets</h2>
+    ${n ? ve.coffrets.map((c, i) => coffretCard(ve, c, i)).join('') : '<div class="card empty">Aucun coffret.<br>Appuie sur <b>+</b> pour ajouter le premier.</div>'}
+    <button class="btn block" onclick="addCoffret()">+ Ajouter un coffret</button>
+    ${ve.closed ? `<button class="btn block" onclick="reopenVe('${ve.id}')">↩️ Rouvrir la VE</button>`
+                : `<button class="btn ok block" onclick="closeVe('${ve.id}')">✅ Clôturer la VE</button>`}
+    <button class="btn block" onclick="editVe('${ve.id}')">✏️ Site et dates</button>
+    <button class="btn block" style="color:var(--bad)" onclick="deleteVe('${ve.id}')">🗑 Supprimer la VE</button>`;
+}
+function editVe(id){
+  const ve = S.ves.find(v => v.id === id);
+  openSheet(`<h3>Site et dates</h3>
+    <label>Nom du site</label><input id="evName" value="${esc(siteName(ve.siteId))}">
+    <div class="grid2">
+      <div><label>Début</label><input id="evStart" type="date" value="${dayInput(ve.start)}"></div>
+      <div><label>Fin</label><input id="evEnd" type="date" value="${ve.end ? dayInput(ve.end) : ''}"></div>
+    </div>
+    <div class="hint">Renommer le site le renomme aussi dans les autres VE de ce site.</div>
+    <button class="btn primary block" onclick="saveVeEdit('${id}')">Enregistrer</button>
+    <button class="btn block" onclick="closeSheet()">Annuler</button>`);
+}
+function saveVeEdit(id){
+  const ve = S.ves.find(v => v.id === id), name = $('evName').value.trim();
+  if (name) S.sites.find(s => s.id === ve.siteId).name = name;
+  if ($('evStart').value) ve.start = new Date($('evStart').value + 'T08:00').getTime();
+  ve.end = $('evEnd').value ? new Date($('evEnd').value + 'T18:00').getTime() : (ve.closed ? ve.end : null);
+  save(); closeSheet(); render();
+}
+function closeVe(id){
+  const ve = S.ves.find(v => v.id === id); const {n, d} = veProgress(ve);
+  if (d < n && !confirm(`${n - d} coffret${n-d>1?'s':''} sans mesures complètes. Clôturer quand même ?`)) return;
+  snapshot(); ve.closed = true; ve.end = ve.end || Date.now(); save(); render();
+  offerUndo('VE clôturée'); showCarnet(id);
+}
+function reopenVe(id){ const ve = S.ves.find(v => v.id === id); snapshot(); ve.closed = false; save(); render(); offerUndo('VE rouverte'); }
+function deleteVe(id){
+  if (!confirm('Supprimer cette VE et toutes ses mesures ?')) return;
+  snapshot(); S.ves = S.ves.filter(v => v.id !== id); save(); go('ves'); offerUndo('VE supprimée');
+}
+
+/* ============ Coffret ============ */
+let curC = null;
+const getC = () => { const ve = S.ves.find(v => v.id === curVe); return ve && ve.coffrets.find(c => c.id === curC); };
+function addCoffret(){
+  const ve = S.ves.find(v => v.id === curVe); if (!ve) return;
+  const c = {id: uid(), label: '', loc: '', type: 'alarme', bats: [{id: uid(), cap: 17, pose: '', replaced: false}], vOn: '', vOff: '', conso: '', unit: 'mA', note: ''};
+  ve.coffrets.push(c); save(); render(); editCoffret(c.id, true);
+}
+function editCoffret(id, isNew){
+  curC = id; const c = getC(); if (!c) return;
+  openSheet(`<h3>${isNew ? 'Nouveau coffret' : esc(c.label || 'Coffret')}</h3>
+    <label>Libellé</label><input id="cLabel" value="${esc(c.label)}" placeholder="ex. Centrale bâtiment A" oninput="setC('label', this.value)">
+    <label>Localisation</label><input id="cLoc" value="${esc(c.loc)}" placeholder="ex. Local technique RDC" oninput="setC('loc', this.value)">
+    <label>Type</label>
+    <div class="chips">${[['alarme','🚨 Alarme'],['ca','🚪 Contrôle d\'accès']].map(([k,l]) => `<button class="chip ${c.type===k?'on':''}" onclick="setC('type','${k}');editCoffret('${id}')">${l}</button>`).join('')}</div>
+
+    <label style="margin-top:14px">Batteries 12 V</label>
+    <div id="batList">${c.bats.map((b, i) => batEditor(b, i)).join('')}</div>
+    <button class="btn block small" onclick="addBat()">+ Ajouter une batterie</button>
+
+    <label style="margin-top:14px">Mesures</label>
+    <div class="grid2">
+      <div><label style="margin-top:0">Sous tension (V)</label><input inputmode="decimal" value="${esc(fmtNum(c.vOn))}" placeholder="ex. 13,6" oninput="setC('vOn', this.value)"></div>
+      <div><label style="margin-top:0">Hors tension (V)</label><input inputmode="decimal" value="${esc(fmtNum(c.vOff))}" placeholder="ex. 12,7" oninput="setC('vOff', this.value)"></div>
+    </div>
+    <label>Consommation</label>
+    <div class="row">
+      <input class="grow" inputmode="decimal" value="${esc(fmtNum(c.conso))}" placeholder="ex. 450" oninput="setC('conso', this.value)">
+      <div class="unit">${['mA','A'].map(u => `<button class="chip ${c.unit===u?'on':''}" onclick="setC('unit','${u}');this.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===this))">${u}</button>`).join('')}</div>
+    </div>
+    <label>Remarque (facultatif)</label>
+    <textarea style="min-height:60px" placeholder="ex. ventouse porte 3 à surveiller" oninput="setC('note', this.value)">${esc(c.note)}</textarea>
+
+    <button class="btn primary block" onclick="closeSheet();render()">✓ Terminé</button>
+    <button class="btn block" style="color:var(--bad)" onclick="deleteCoffret()">🗑 Supprimer ce coffret</button>`);
+  if (isNew) setTimeout(() => $('cLabel') && $('cLabel').focus(), 60);
+}
+function batEditor(b, i){
+  const st = batStatus(b);
+  return `<div class="bat">
+    <div class="row"><div class="grow sub" style="margin:0">Batterie ${i+1} ${b.pose ? `· ${ageText(ageMonths(b.pose))}` : ''} ${st === 'bad' ? '<span class="pill bad">⚠️ à remplacer</span>' : st === 'warn' ? '<span class="pill warn">⏳ à prévoir</span>' : ''} ${b.replaced ? '<span class="pill info">🔁 remplacée</span>' : ''}</div>
+      <button class="btn small" onclick="delBat('${b.id}')" aria-label="Supprimer">✕</button></div>
+    <div class="chips" style="margin-top:6px">${CAPS.map(cap => `<button class="chip ${b.cap===cap?'on':''}" onclick="setBat('${b.id}','cap',${cap})">${cap} Ah</button>`).join('')}</div>
+    <label>Date de pose</label>
+    <div class="row">
+      <input class="grow" type="month" value="${esc(b.pose)}" onchange="setBat('${b.id}','pose',this.value)">
+      ${b.replaced ? `<button class="btn small" onclick="undoReplace('${b.id}')">Annuler remplacement</button>`
+                   : `<button class="btn small" onclick="replaceBat('${b.id}')">🔁 Remplacée</button>`}
+    </div>
+  </div>`;
+}
+function setC(k, v){ const c = getC(); if (!c) return; c[k] = v; save(); }
+function refreshBats(){ const c = getC(); if (c && $('batList')) $('batList').innerHTML = c.bats.map((b, i) => batEditor(b, i)).join(''); }
+function setBat(id, k, v){ const b = getC().bats.find(x => x.id === id); b[k] = v; save(); refreshBats(); }
+function addBat(){ const c = getC(); const last = c.bats[c.bats.length - 1]; c.bats.push({id: uid(), cap: last ? last.cap : 17, pose: last ? last.pose : '', replaced: false}); save(); refreshBats(); }
+function delBat(id){ const c = getC(); snapshot(); c.bats = c.bats.filter(b => b.id !== id); save(); refreshBats(); offerUndo('Batterie supprimée'); }
+function replaceBat(id){
+  const b = getC().bats.find(x => x.id === id);
+  b.oldPose = b.pose; b.pose = thisMonth(); b.replaced = true; save(); refreshBats();
+  toast(`🔁 Batterie remplacée : date de pose ${fmtPose(b.pose)}`);
+}
+function undoReplace(id){ const b = getC().bats.find(x => x.id === id); b.pose = b.oldPose || ''; b.replaced = false; delete b.oldPose; save(); refreshBats(); }
+function deleteCoffret(){
+  const ve = S.ves.find(v => v.id === curVe); const c = getC();
+  if (!confirm(`Supprimer le coffret « ${c.label || 'sans nom'} » ?`)) return;
+  snapshot(); ve.coffrets = ve.coffrets.filter(x => x.id !== c.id); save(); closeSheet(); render(); offerUndo('Coffret supprimé');
+}
+
+/* ============ Récap & carnet ============ */
+function batLine(b){
+  const st = batStatus(b);
+  return `12V ${b.cap}Ah posée ${fmtPose(b.pose)}` + (b.replaced ? ` (remplacée${b.oldPose ? ', ancienne posée ' + fmtPose(b.oldPose) : ''})` : (b.pose ? ` (${ageText(ageMonths(b.pose))}${st === 'bad' ? ' – à remplacer' : st === 'warn' ? ' – à prévoir' : ''})` : ''));
+}
+function coffretText(c, i){
+  return `[${i+1}] ${c.label || 'Coffret ' + (i+1)} – ${typeLabel(c.type)}${c.loc ? ' – ' + c.loc : ''}\n`
+    + `Batterie${c.bats.length>1?'s':''} : ${c.bats.length ? c.bats.map(batLine).join(' + ') : 'aucune'}\n`
+    + `Sous tension : ${fmtNum(c.vOn) || '–'} V | Hors tension : ${fmtNum(c.vOff) || '–'} V | Conso : ${fmtNum(c.conso) || '–'} ${c.unit}`
+    + (c.note ? `\nRemarque : ${c.note}` : '');
+}
+function recapText(ve){
+  return `VE ${siteName(ve.siteId)} – du ${fmtDay(ve.start)}${ve.end ? ' au ' + fmtDay(ve.end) : ' (en cours)'}\n\n` + ve.coffrets.map(coffretText).join('\n\n');
+}
+async function copyText(t, msg){
+  try { await navigator.clipboard.writeText(t); }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  toast(msg || '📋 Copié');
+}
+let recapVe = null;
+function showRecap(id){
+  const ve = S.ves.find(v => v.id === id); recapVe = ve;
+  openSheet(`<h3>📋 Récap pour le compte rendu</h3>
+    <div class="sub" style="margin-bottom:8px">À recopier dans l'appli de la boîte. Tu peux tout copier, ou coffret par coffret.</div>
+    <button class="btn primary block" onclick="copyText(recapText(recapVe),'📋 Récap complet copié')">📋 Copier tout</button>
+    ${ve.coffrets.map((c, i) => `<div class="card" style="margin-top:10px">
+      <div class="preview" style="max-height:none">${esc(coffretText(c, i))}</div>
+      <button class="btn small block" onclick="copyText(coffretText(recapVe.coffrets[${i}],${i}),'📋 Coffret ${i+1} copié')">📋 Copier ce coffret</button>
+    </div>`).join('') || '<div class="empty">Aucun coffret dans cette VE.</div>'}
     <button class="btn block" onclick="closeSheet()">Fermer</button>`);
-  S.notifs.forEach(n => n.read = true); save();
+}
+function carnetAuto(ve){
+  // Version courte (2 lignes max) : le détail est dans le récap et le rapport PDF
+  const n = ve.coffrets.length;
+  const d1 = new Date(ve.start), d2 = ve.end ? new Date(ve.end) : null;
+  const dd = d => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+  const period = d2 && fmtDay(ve.end) !== fmtDay(ve.start) ? `${dd(d1)} au ${fmtDay(ve.end)}` : fmtDay(ve.start);
+  const repl = [], todo = [];
+  ve.coffrets.forEach(c => c.bats.forEach(b => {
+    if (b.replaced) repl.push(c.label || 'coffret');
+    else if (batStatus(b) === 'bad') todo.push(c.label || 'coffret');
+  }));
+  const list = (arr, one, many) => arr.length === 1 ? `${one} : ${arr[0]}.` : arr.length === 2 ? `${many} : ${arr.join(', ')}.` : `${arr.length} ${many.toLowerCase()}.`;
+  let t = `VE du ${period} : ${n} coffret${n>1?'s':''} contrôlé${n>1?'s':''}, tensions et conso relevées.`;
+  if (repl.length) t += ' ' + list(repl, 'Batterie remplacée', 'Batteries remplacées');
+  if (todo.length) t += ' ' + list(todo, 'Batterie à remplacer', 'Batteries à remplacer');
+  if (!repl.length && !todo.length) t += ' Batteries OK.';
+  return t;
+}
+let carnetVe = null;
+function showCarnet(id){
+  const ve = S.ves.find(v => v.id === id); carnetVe = ve;
+  const text = ve.carnetEdited && ve.carnet ? ve.carnet : carnetAuto(ve);
+  openSheet(`<h3>📒 Carnet de maintenance</h3>
+    <div class="sub" style="margin-bottom:8px">Texte bref (2 lignes) préparé à partir de tes saisies. Modifie-le si besoin, puis copie-le.</div>
+    <textarea id="carnetTxt" style="min-height:90px" oninput="carnetVe.carnet=this.value;carnetVe.carnetEdited=true;save()">${esc(text)}</textarea>
+    <button class="btn primary block" onclick="copyText($('carnetTxt').value,'📋 Texte du carnet copié')">📋 Copier</button>
+    <button class="btn block" onclick="carnetVe.carnetEdited=false;carnetVe.carnet='';save();showCarnet(carnetVe.id)">🔄 Régénérer depuis les saisies</button>
+    <button class="btn ok block" onclick="makePdf(carnetVe.id)">📄 Générer le rapport PDF</button>
+    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+}
+
+
+/* ============ Rapport PDF ============ */
+const TEAL = [15, 76, 92], STATE_COL = {bad: [214, 69, 69], warn: [217, 138, 0], ok: [31, 157, 85], unknown: [102, 118, 132], repl: [27, 111, 133]};
+const pdfSafe = t => String(t ?? '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, '...')
+  .replace(/[^\x20-\x7E -ÿ–—€\n]/g, '');   // jsPDF (polices standard) : alphabet latin uniquement
+function pdfName(ve){
+  const site = siteName(ve.siteId).replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 50);
+  const d = new Date(ve.end || ve.start);
+  return `Rapport VE - ${site} - ${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}.pdf`;
+}
+function buildPdf(ve){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit: 'mm', format: 'a4'});
+  const W = 210, M = 14, CW = W - 2 * M;
+  const bats = ve.coffrets.flatMap(c => c.bats.map(b => ({c, b, st: b.replaced ? 'repl' : batStatus(b)})));
+  const nBad = bats.filter(x => x.st === 'bad').length, nRepl = bats.filter(x => x.st === 'repl').length, nWarn = bats.filter(x => x.st === 'warn').length;
+
+  // En-tête
+  doc.setFillColor(...TEAL); doc.rect(0, 0, W, 28, 'F');
+  doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+  doc.text(pdfSafe("Rapport de visite d'entretien"), M, 12);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  doc.text(pdfSafe("Relevé des batteries – coffrets d'alarme et de contrôle d'accès"), M, 19.5);
+  doc.setFontSize(9); doc.text(pdfSafe(ve.closed ? 'VE clôturée' : 'VE en cours'), W - M, 12, {align: 'right'});
+
+  // Informations
+  let y = 38;
+  const info = [['Site', siteName(ve.siteId)],
+    ['Période', `du ${fmtDay(ve.start)}${ve.end ? ' au ' + fmtDay(ve.end) : ' (en cours)'}`],
+    ['Technicien', S.settings.tech || '—']];
+  info.forEach(([k, v]) => {
+    doc.setTextColor(102, 118, 132); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.text(pdfSafe(k), M, y);
+    doc.setTextColor(22, 33, 42); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(pdfSafe(v), M + 26, y);
+    y += 6.5;
+  });
+
+  // Résumé (4 cases)
+  y += 2;
+  const boxes = [['Coffrets', ve.coffrets.length, TEAL], ['Batteries', bats.length, TEAL],
+    ['À remplacer', nBad, nBad ? STATE_COL.bad : STATE_COL.ok], ['Remplacées', nRepl, STATE_COL.repl]];
+  const bw = (CW - 3 * 4) / 4;
+  boxes.forEach(([lab, val, col], i) => {
+    const x = M + i * (bw + 4);
+    doc.setDrawColor(...col); doc.setLineWidth(0.5); doc.roundedRect(x, y, bw, 17, 2, 2, 'S');
+    doc.setTextColor(...col); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(String(val), x + bw / 2, y + 8.5, {align: 'center'});
+    doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.text(pdfSafe(lab), x + bw / 2, y + 14, {align: 'center'});
+  });
+  y += 25;
+
+  const section = (title) => {
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.setTextColor(...TEAL); doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.text(pdfSafe(title), M, y);
+    doc.setDrawColor(...TEAL); doc.setLineWidth(0.4); doc.line(M, y + 1.8, W - M, y + 1.8); y += 6;
+  };
+  const table = (head, body, opts) => {
+    doc.autoTable(Object.assign({startY: y, head: [head.map(pdfSafe)], body: body.map(r => r.map(c => pdfSafe(c))), margin: {left: M, right: M},
+      theme: 'grid', styles: {font: 'helvetica', fontSize: 8.8, cellPadding: 1.8, textColor: [22, 33, 42], lineColor: [210, 218, 223], lineWidth: 0.2},
+      headStyles: {fillColor: TEAL, textColor: 255, fontStyle: 'bold', halign: 'center'},
+      alternateRowStyles: {fillColor: [243, 247, 248]}}, opts || {}));
+    y = doc.lastAutoTable.finalY + 9;
+  };
+
+  // 1. Mesures
+  section('1. Mesures par coffret');
+  if (ve.coffrets.length) table(['#', 'Coffret', 'Type', 'Localisation', 'Sous tension', 'Hors tension', 'Consommation'],
+    ve.coffrets.map((c, i) => [i + 1, c.label || 'Coffret ' + (i + 1), typeLabel(c.type), c.loc || '—',
+      num(c.vOn) !== null ? fmtNum(c.vOn) + ' V' : '—', num(c.vOff) !== null ? fmtNum(c.vOff) + ' V' : '—',
+      num(c.conso) !== null ? fmtNum(c.conso) + ' ' + c.unit : '—']),
+    {columnStyles: {0: {halign: 'center', cellWidth: 8}, 4: {halign: 'center'}, 5: {halign: 'center'}, 6: {halign: 'center'}}});
+  else { doc.setFont('helvetica', 'italic'); doc.setFontSize(10); doc.setTextColor(102, 118, 132); doc.text('Aucun coffret.', M, y); y += 9; }
+
+  // 2. Batteries
+  section('2. État des batteries 12 V');
+  const stLabel = {bad: 'À remplacer', warn: 'À prévoir', ok: 'OK', unknown: 'Date inconnue', repl: 'Remplacée'};
+  if (bats.length) table(['Coffret', 'Capacité', 'Date de pose', 'Âge', 'État'],
+    bats.map(x => [x.c.label || 'Coffret', x.b.cap + ' Ah', fmtPose(x.b.pose) + (x.b.replaced && x.b.oldPose ? ` (ancienne : ${fmtPose(x.b.oldPose)})` : ''),
+      x.b.pose ? ageText(ageMonths(x.b.pose)) : '—', stLabel[x.st]]),
+    {columnStyles: {1: {halign: 'center'}, 2: {halign: 'center'}, 3: {halign: 'center'}, 4: {halign: 'center', fontStyle: 'bold'}},
+     didParseCell: d => { if (d.section === 'body' && d.column.index === 4) d.cell.styles.textColor = STATE_COL[bats[d.row.index].st]; }});
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(102, 118, 132);
+  doc.text(pdfSafe(`Remplacement conseillé tous les ${S.settings.ageYears} ans.${nWarn ? ` ${nWarn} batterie${nWarn>1?'s':''} à prévoir dans les ${S.settings.warnMonths} prochains mois.` : ''}`), M, y - 5);
+  y += 1;
+
+  // 3. Remarques
+  const notes = ve.coffrets.filter(c => c.note);
+  if (notes.length) { section('3. Remarques'); table(['Coffret', 'Remarque'], notes.map(c => [c.label || 'Coffret', c.note]), {columnStyles: {0: {cellWidth: 50, fontStyle: 'bold'}}}); }
+
+  // 4. Carnet de maintenance
+  section(`${notes.length ? 4 : 3}. Carnet de maintenance`);
+  const carnet = pdfSafe(ve.carnetEdited && ve.carnet ? ve.carnet : carnetAuto(ve));
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(22, 33, 42);
+  const lines = doc.splitTextToSize(carnet, CW - 8), h = lines.length * 4.6 + 7;
+  if (y + h > 280) { doc.addPage(); y = 20; }
+  doc.setFillColor(243, 247, 248); doc.setDrawColor(210, 218, 223); doc.roundedRect(M, y - 2, CW, h, 2, 2, 'FD');
+  doc.text(lines, M + 4, y + 3.5); y += h + 6;
+
+  // Pied de page
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i); doc.setDrawColor(210, 218, 223); doc.setLineWidth(0.2); doc.line(M, 286, W - M, 286);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(102, 118, 132);
+    doc.text(pdfSafe(`${siteName(ve.siteId)} – généré le ${new Date().toLocaleString('fr-FR')}`), M, 291);
+    doc.text(`Page ${i} / ${n}`, W - M, 291, {align: 'right'});
+  }
+  return doc;
+}
+let lastPdf = null;
+function makePdf(id){
+  const ve = S.ves.find(v => v.id === id); if (!ve) return;
+  if (!window.jspdf) return toast('Module PDF indisponible : recharge l\'appli avec du réseau');
+  let blob;
+  try { blob = buildPdf(ve).output('blob'); } catch(e) { return toast('Erreur PDF : ' + e.message); }
+  const name = pdfName(ve);
+  lastPdf = {blob, name};
+  openSheet(`<h3>📄 Rapport PDF prêt</h3>
+    <div class="sub">${esc(name)}</div>
+    <button class="btn primary block" onclick="sharePdf()">📤 Partager (mail, WhatsApp, Drive…)</button>
+    <button class="btn block" onclick="download(lastPdf.name, lastPdf.blob, 'application/pdf')">⬇️ Télécharger sur le téléphone</button>
+    <button class="btn block" onclick="window.open(URL.createObjectURL(lastPdf.blob), '_blank')">👁️ Voir le rapport</button>
+    <div class="hint" id="pdfOd">${odReady() ? '☁️ Envoi d\'une copie sur OneDrive › Rapports…' : 'Connecte OneDrive dans les Réglages pour garder automatiquement une copie de chaque rapport.'}</div>
+    <button class="btn block" onclick="closeSheet()">Fermer</button>`);
+  if (odReady()) odSavePdf(blob, name);
+}
+async function sharePdf(){
+  if (!lastPdf) return;
+  const file = new File([lastPdf.blob], lastPdf.name, {type: 'application/pdf'});
+  try {
+    if (navigator.canShare && navigator.canShare({files: [file]})) return await navigator.share({files: [file], title: lastPdf.name});
+  } catch(e) { if (e.name === 'AbortError') return; }
+  download(lastPdf.name, lastPdf.blob, 'application/pdf'); toast('Partage indisponible : rapport téléchargé');
+}
+async function odSavePdf(blob, name){
+  try {
+    const token = await odToken();
+    await odPut(token, 'Rapports/' + name, blob, 'application/pdf');
+    if ($('pdfOd')) $('pdfOd').textContent = '☁️ Copie enregistrée sur OneDrive › Applications › BATTERIES VE › Rapports';
+  } catch(e) { if ($('pdfOd')) $('pdfOd').textContent = '☁️ Copie OneDrive impossible pour l\'instant : ' + odErrText(e); }
+}
+
+/* ============ Vue Batteries (tous sites) ============ */
+function allBatteries(){
+  // État le plus récent connu de chaque site = sa dernière VE
+  const out = [];
+  S.sites.forEach(site => {
+    const ve = S.ves.filter(v => v.siteId === site.id).sort((a,b) => b.start - a.start)[0];
+    if (!ve) return;
+    ve.coffrets.forEach(c => c.bats.forEach(b => out.push({site, ve, c, b, st: batStatus(b), mo: ageMonths(b.pose)})));
+  });
+  return out.sort((a,b) => (b.mo ?? -1) - (a.mo ?? -1));
+}
+function renderBats(){
+  const all = allBatteries();
+  const sec = (st, title) => {
+    const l = all.filter(x => x.st === st); if (!l.length) return '';
+    return `<h2>${title} (${l.length})</h2>` + l.map(x => `<div class="card tap" onclick="go('ve','${x.ve.id}')">
+      <div class="name">${esc(x.site.name)}</div>
+      <div class="sub">${typeIcon(x.c.type)} ${esc(x.c.label || 'Coffret')}${x.c.loc ? ' · ' + esc(x.c.loc) : ''}</div>
+      ${batPill(x.b)}</div>`).join('');
+  };
+  $('view').innerHTML = all.length ? `
+    <div class="sub">Dernier état connu de chaque site (dernière VE). Remplacement conseillé tous les <b>${S.settings.ageYears} ans</b>.</div>
+    ${sec('bad', '⚠️ À remplacer')}${sec('warn', `⏳ À prévoir (moins de ${S.settings.warnMonths} mois)`)}${sec('unknown', '❓ Date de pose inconnue')}
+    <h2>✅ OK : ${all.filter(x => x.st === 'ok').length} batterie${all.filter(x => x.st === 'ok').length>1?'s':''}</h2>`
+    : '<div class="empty">Aucune batterie enregistrée.<br>Elles apparaîtront ici dès ta première VE.</div>';
+}
+function updateBadges(){
+  const n = allBatteries().filter(x => x.st === 'bad').length;
+  $('batBadge').hidden = !n; $('batBadge').textContent = n;
 }
 
 /* ============ Réglages ============ */
 function renderSettings(){
-  const st = S.settings;
   $('view').innerHTML = `
-    <h2>Mail au responsable</h2>
+    <h2>👷 Rapport PDF</h2>
     <div class="card">
-      <label>Mon nom (signature)</label><input id="sTech" value="${esc(st.tech)}" placeholder="ex. Julien Martin">
-      <label>Adresse mail du responsable</label><input id="sTo" type="email" inputmode="email" value="${esc(st.to)}" placeholder="responsable@entreprise.fr">
-      <label>Copie (Cc) – facultatif</label><input id="sCc" type="email" inputmode="email" value="${esc(st.cc)}" placeholder="ex. magasin@entreprise.fr">
-      <label>Objet par défaut</label><input id="sSubject" value="${esc(st.subject)}">
-      <label>Début du mail</label><textarea id="sIntro">${esc(st.intro)}</textarea>
-      <label>Fin du mail</label><textarea id="sOutro">${esc(st.outro)}</textarea>
-      <div class="hint">Raccourcis : <b>{date}</b> = date du jour, <b>{nom}</b> = ton nom. La liste du matériel s'insère automatiquement entre le début et la fin.</div>
-      <button class="btn primary block" onclick="saveSettings()">Enregistrer</button>
+      <label style="margin-top:0">Nom du technicien (affiché sur le rapport)</label>
+      <input id="sTech" value="${esc(S.settings.tech || '')}" placeholder="ex. Aeden Becher" onchange="S.settings.tech=this.value.trim();save();toast('Nom enregistré')">
     </div>
-    <h2>📊 Seuils automatiques</h2>
+    <h2>🔋 Alertes batteries</h2>
     <div class="card">
-      <div class="sub">L'appli calcule tes seuils et cibles d'après ta <b>vraie consommation</b> (retraits des 8 dernières semaines).</div>
       <div class="grid2">
-        <div><label>Délai de livraison (jours)</label><input id="sLead" type="number" inputmode="numeric" min="1" value="${S.settings.leadDays || 7}"></div>
-        <div><label>Autonomie voulue (semaines)</label><input id="sCover" type="number" inputmode="numeric" min="1" value="${S.settings.coverWeeks || 2}"></div>
+        <div><label>Remplacement tous les (ans)</label><input id="sAge" type="number" inputmode="numeric" min="1" value="${S.settings.ageYears}"></div>
+        <div><label>Prévenir avant (mois)</label><input id="sWarn" type="number" inputmode="numeric" min="0" value="${S.settings.warnMonths}"></div>
       </div>
-      <div class="hint">Seuil = ce que tu consommes pendant le délai de livraison. Cible = seuil + l'autonomie voulue.</div>
-      <button class="btn primary block" onclick="saveAutoParams();openAutoThresholds()">📊 Voir les seuils conseillés</button>
+      <button class="btn primary block" onclick="saveSettings()">Enregistrer</button>
     </div>
     <h2>☁️ OneDrive (synchronisation automatique)</h2>
     <div class="card" id="odCard">${odSettingsHtml()}</div>
-    <h2>Sauvegarde</h2>
+    <h2>Sauvegarde & export</h2>
     <div class="card">
-      <div class="sub">Les données sont stockées sur ce téléphone${odReady() ? ', et copiées automatiquement sur ton OneDrive' : ''}. ${odReady() ? 'Tu peux aussi garder une sauvegarde manuelle.' : 'Fais une sauvegarde de temps en temps (changement de téléphone, nettoyage du navigateur…), ou connecte OneDrive ci-dessus.'}</div>
-      <div class="sub" style="margin-top:6px">Dernière sauvegarde : <b>${S.lastBackup ? fmtDate(S.lastBackup) : 'jamais'}</b> · Enregistrement sur ce téléphone : <b style="color:var(${storageOK?'--ok':'--bad'})">${storageOK ? 'actif ✓' : 'impossible ✗'}</b></div>
+      <div class="sub">Dernière sauvegarde manuelle : <b>${S.lastBackup ? fmtDate(S.lastBackup) : 'jamais'}</b></div>
+      <button class="btn block" onclick="exportXlsx()">📊 Exporter en Excel</button>
       <button class="btn block" onclick="exportData()">⬇️ Exporter une sauvegarde</button>
-      <button class="btn block" onclick="$('imp').click()">⬆️ Importer une sauvegarde</button>
-      <input type="file" id="imp" accept=".json,application/json" hidden onchange="importData(this.files[0])">
+      <button class="btn block" onclick="$('impJson').click()">⬆️ Importer une sauvegarde</button>
     </div>
-    <h2>Inventaire (CSV / Excel)</h2>
-    <div class="card">
-      <div class="sub">Pour échanger ton inventaire avec Excel ou un collègue. Colonnes : Désignation ; Référence ; Catégorie ; Stock ; Seuil ; Cible. Dans Excel, enregistre au format <b>CSV (séparateur : point-virgule)</b>.</div>
-      <button class="btn block" onclick="exportXlsx()">📊 Exporter en Excel (.xlsx, mis en forme)</button>
-      <button class="btn primary block" onclick="shareInventory()">🔄 Envoyer l'inventaire à jour (OneDrive, Drive, mail…)</button>
-      <div class="hint">Toujours le même nom de fichier (inventaire-camion.csv) : dans OneDrive ou Drive, choisis « Remplacer » pour garder un seul fichier à jour.</div>
-      <button class="btn block" onclick="exportCSV()">📤 Exporter l'inventaire (fichier daté)</button>
-      <button class="btn block" onclick="$('impCsv').click()">📥 Importer un inventaire</button>
-      <input type="file" id="impCsv" accept=".csv,.txt,text/csv,text/plain" hidden onchange="importCSV(this.files[0]);this.value=''">
-      <button class="btn block" onclick="downloadTemplate()">📝 Télécharger un modèle vide</button>
-    </div>
-    <div class="card">
-      <button class="btn danger block" onclick="resetAll()">Tout effacer</button>
-    </div>
-    <div class="sub center" style="margin:14px 0 4px">🚐 Stock Camion · <b>version ${APP_VERSION}</b> du ${APP_DATE}</div>`;
+    <div class="card"><button class="btn danger block" onclick="resetAll()">Tout effacer</button></div>
+    <div class="sub center" style="margin:14px 0 4px">🔋 Batteries VE · <b>version ${APP_VERSION}</b> du ${APP_DATE}</div>`;
 }
 function saveSettings(){
-  Object.assign(S.settings, {
-    tech:$('sTech').value.trim(), to:$('sTo').value.trim(), cc:$('sCc').value.trim(),
-    subject:$('sSubject').value, intro:$('sIntro').value, outro:$('sOutro').value
-  });
-  save(); toast('Réglages enregistrés');
+  S.settings.ageYears = Math.max(1, parseInt($('sAge').value, 10) || 4);
+  S.settings.warnMonths = Math.max(0, parseInt($('sWarn').value, 10) || 0);
+  save(); toast('Réglages enregistrés'); render();
 }
 function download(name, content, type){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], {type}));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], {type}));
   a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
-function exportData(){ S.lastBackup = Date.now(); save(); render(); download(`stock-camion-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(S,null,2), 'application/json'); }
-function exportCSV(){ download(`inventaire-${new Date().toISOString().slice(0,10)}.csv`, inventoryCSV(), 'text/csv'); }
-async function shareInventory(){
-  const name = 'inventaire-camion.csv';
-  try {
-    const file = new File([inventoryCSV()], name, {type:'text/csv'});
-    if (navigator.canShare && navigator.canShare({files:[file]})) {
-      await navigator.share({files:[file], title:'Inventaire camion', text:`Inventaire camion au ${today()}`});
-      return;
-    }
-  } catch(e){ if (e.name === 'AbortError') return; }
-  download(name, inventoryCSV(), 'text/csv');
-  toast('Partage indisponible : fichier téléchargé');
-}
-function inventoryCSV(){
-  const rows = [['Désignation','Référence','Catégorie','Stock','Seuil','Cible','Statut']]
-    .concat(S.items.slice()
-      .map(i => [i.name,i.ref,i.cat,i.qty,i.min,i.target,i.ordered?'Commandé':(isLow(i)?'À commander':'OK')]));
-  return'\ufeff'+rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\n');
-}
-/* ============ Import inventaire CSV ============ */
-function downloadTemplate(){
-  const rows = [['Désignation','Référence','Catégorie','Stock','Seuil','Cible'],
-    ['Détecteur de mouvement','DET-200','Détection','6','2','8'],
-    ['Batterie 12V 7Ah','BAT-127','Alimentation','4','2','6']];
-  download('modele-inventaire.csv', '\ufeff'+rows.map(r=>r.map(c=>`"${c}"`).join(';')).join('\n'), 'text/csv');
-}
-function parseCSV(text){
-  text = text.replace(/^\ufeff/, '');
-  const first = text.split(/\r?\n/)[0] || '';
-  const count = ch => first.split(ch).length;
-  const sep = [';', '\t', ','].sort((a,b) => count(b) - count(a))[0];
-  const rows = []; let row = [], cell = '', q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (q) {
-      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
-      else if (c === '"') q = false;
-      else cell += c;
-    } else if (c === '"') q = true;
-    else if (c === sep) { row.push(cell); cell = ''; }
-    else if (c === '\n' || c === '\r') {
-      if (c === '\r' && text[i+1] === '\n') i++;
-      row.push(cell); rows.push(row); row = []; cell = '';
-    } else cell += c;
-  }
-  if (cell || row.length) { row.push(cell); rows.push(row); }
-  return rows.map(r => r.map(c => c.trim())).filter(r => r.some(c => c));
-}
-let pendingImport = null;
-// Texte d'un fichier : UTF-8, ou encodage Windows (fichiers enregistrés par Excel)
-function decodeBytes(buf){
-  try { return new TextDecoder('utf-8', {fatal: true}).decode(buf); }
-  catch(e) { return new TextDecoder('windows-1252').decode(buf); }
-}
-// Lit un inventaire CSV → {items, skipped}
-function csvToItems(text){
-  const rows = parseCSV(text);
-  if (!rows.length) return {items: [], skipped: []};
-  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  const h = rows[0].map(norm);
-  const find = keys => h.findIndex(c => keys.some(k => c.includes(k)));
-  let map = { name: find(['design','nom','article','libelle','produit']), ref: find(['ref','code']),
-              cat: find(['categ','famille','type']), qty: find(['stock','quantit','qte','qty']),
-              min: find(['seuil','min','alerte']), target: find(['cible','max','objectif']) };
-  let data = rows;
-  if (map.name >= 0) data = rows.slice(1);           // en-tête reconnu
-  else map = {name:0, ref:1, cat:2, qty:3, min:4, target:5}; // sinon ordre par défaut
-  const num = v => { const n = parseInt(String(v ?? '').replace(/\s/g,''), 10); return isNaN(n) ? null : Math.max(0, n); };
-  const get = (r, k) => map[k] >= 0 ? r[map[k]] : undefined;
-  const items = [], skipped = [];
-  data.forEach((r, i) => {
-    const name = (get(r,'name') || '').trim();
-    if (!name) { skipped.push(i + 2); return; }
-    items.push({ name, ref:(get(r,'ref')||'').trim(), cat:(get(r,'cat')||'').trim(),
-      qty:num(get(r,'qty')), min:num(get(r,'min')), target:num(get(r,'target')) });
-  });
-  return {items, skipped};
-}
-function showImportSheet(items, skipped, fileName){
-  if (!items.length) return toast('Aucun article trouvé dans le fichier');
-  pendingImport = items;
-  openSheet(`<h3>Importer l'inventaire</h3>
-    <div class="sub"><b>${items.length}</b> article${items.length>1?'s':''} trouvé${items.length>1?'s':''} dans « ${esc(fileName)} »${skipped.length?` · ${skipped.length} ligne(s) sans désignation ignorée(s)`:''}.</div>
-    <div class="preview" style="margin-top:8px">${items.slice(0,8).map(i=>esc(`${i.name}${i.ref?' ('+i.ref+')':''} : ${i.qty ?? '–'}`)).join('\n')}${items.length>8?'\n…':''}</div>
-    <button class="btn primary block" onclick="applyImport('merge')">🔄 Fusionner avec mon stock</button>
-    <div class="hint">Met à jour les articles existants (même référence, ou même nom si pas de référence) et ajoute les nouveaux. Rien n'est supprimé.</div>
-    <button class="btn danger block" onclick="applyImport('replace')">♻️ Remplacer tout mon stock</button>
-    <div class="hint">Supprime les articles actuels et les remplace par ceux du fichier. L'historique est conservé.</div>
-    <button class="btn block" onclick="pendingImport=null;closeSheet()">Annuler</button>`);
-}
-function importCSV(file){
+function exportData(){ S.lastBackup = Date.now(); save(); render(); download(`batteries-ve-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(S, null, 1), 'application/json'); }
+function importData(file){
   if (!file) return;
   const r = new FileReader();
   r.onload = () => {
-    const {items, skipped} = csvToItems(decodeBytes(r.result));
-    if (!items.length && !skipped.length) return toast('Fichier vide');
-    showImportSheet(items, skipped, file.name);
+    try { const d = JSON.parse(r.result); if (!Array.isArray(d.ves)) throw 0;
+      if (!confirm(`Remplacer les données actuelles par cette sauvegarde (${d.ves.length} VE) ?`)) return;
+      snapshot(); S = Object.assign(defaults(), d, {settings: Object.assign(defaults().settings, d.settings || {})}); save(); render(); offerUndo('Sauvegarde importée'); }
+    catch(e){ toast('Fichier de sauvegarde invalide'); }
   };
-  r.readAsArrayBuffer(file);
+  r.readAsText(file);
 }
-function applyImport(mode){
-  const items = pendingImport; if (!items) return;
-  if (mode === 'replace' && !confirm('Remplacer tout le stock actuel par ce fichier ?')) return;
-  snapshot();
-  if (mode === 'replace') S.items = [];
-  let added = 0, updated = 0;
-  const key = s => (s||'').trim().toLowerCase();
-  items.forEach(n => {
-    const ex = S.items.find(i => (n.ref && key(i.ref) === key(n.ref)) || (!n.ref && key(i.name) === key(n.name)));
-    if (ex) {
-      const before = ex.qty;
-      ex.name = n.name; if (n.ref) ex.ref = n.ref; if (n.cat) ex.cat = n.cat;
-      if (n.min !== null) ex.min = n.min;
-      if (n.target !== null) ex.target = n.target;
-      if (n.qty !== null && n.qty !== before) {
-        ex.qty = n.qty;
-        S.history.unshift({id:uid(), t:Date.now(), itemId:ex.id, name:ex.name, delta:n.qty-before, after:n.qty, note:'Import inventaire'});
-        checkThreshold(ex, before);
-      }
-      updated++;
-    } else {
-      const it = {id:uid(), ordered:false, name:n.name, ref:n.ref, cat:n.cat||'Divers',
-        qty:n.qty ?? 0, min:n.min ?? 1, target:n.target ?? ''};
-      S.items.push(it); if (isLow(it)) checkThreshold(it, it.min + 1);
-      added++;
-    }
-  });
-  pendingImport = null; save(); closeSheet(); render();
-  offerUndo(`Import : ${added} ajouté(s), ${updated} mis à jour`);
+function resetAll(){
+  if (!confirm('Effacer toutes les VE, sites et batteries de ce téléphone ?')) return;
+  snapshot(); const keep = S.settings.odClientId; S = defaults(); S.settings.odClientId = keep; save(); render(); offerUndo('Données effacées');
 }
 
+/* ============ Excel ============ */
+function buildXlsx(){
+  const bats = allBatteries();
+  const mes = [];
+  S.ves.slice().sort((a,b) => b.start - a.start).forEach(ve => ve.coffrets.forEach(c => mes.push({ve, c})));
+  return XlsxLite.tablesWorkbook([
+    {name: 'Batteries', headers: ['Site', 'Coffret', 'Localisation', 'Type', 'Capacité (Ah)', 'Date de pose', 'Âge', 'Statut'],
+     rows: bats.map(x => [x.site.name, x.c.label, x.c.loc, typeLabel(x.c.type), x.b.cap, fmtPose(x.b.pose), x.b.pose ? ageText(x.mo) : '', {bad:'À remplacer', warn:'À prévoir', ok:'OK', unknown:'Date inconnue'}[x.st]]),
+     red: bats.map(x => x.st === 'bad'), center: [4, 5, 6, 7], widths: [28, 26, 26, 16, 12, 12, 14, 14]},
+    {name: 'Mesures', headers: ['Début VE', 'Fin VE', 'Site', 'Coffret', 'Type', 'Sous tension (V)', 'Hors tension (V)', 'Conso', 'Unité', 'Batteries', 'Remarque'],
+     rows: mes.map(({ve, c}) => [fmtDay(ve.start), fmtDay(ve.end), siteName(ve.siteId), c.label, typeLabel(c.type), num(c.vOn) ?? '', num(c.vOff) ?? '', num(c.conso) ?? '', c.unit, c.bats.map(b => `${b.cap}Ah ${fmtPose(b.pose)}${b.replaced ? ' (remplacée)' : ''}`).join(' + '), c.note || '']),
+     center: [0, 1, 5, 6, 7, 8], widths: [12, 12, 26, 26, 16, 15, 15, 10, 7, 34, 34]},
+    {name: 'Carnet', headers: ['Site', 'Début', 'Fin', 'Statut', 'Coffrets', 'Texte du carnet'],
+     rows: S.ves.slice().sort((a,b) => b.start - a.start).map(ve => [siteName(ve.siteId), fmtDay(ve.start), fmtDay(ve.end), ve.closed ? 'Clôturée' : 'En cours', ve.coffrets.length, ve.carnetEdited && ve.carnet ? ve.carnet : carnetAuto(ve)]),
+     center: [1, 2, 3, 4], widths: [26, 12, 12, 11, 9, 100]}
+  ]);
+}
+function exportXlsx(){ download(`batteries-ve-${new Date().toISOString().slice(0,10)}.xlsx`, buildXlsx(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }
+
+/* ============ Fenêtres ============ */
+function openSheet(html){ $('sheet').innerHTML = html; $('sheetBg').classList.add('show'); $('undoBar').classList.remove('show'); }
+function closeSheet(){ $('sheetBg').classList.remove('show'); if (undoSnap) $('undoBar').classList.add('show'); }
+
+/* ============ Annuler ============ */
+let undoSnap = null, undoTimer = null;
+function snapshot(){ undoSnap = JSON.stringify(S); }
+function setNavH(){ const n = document.querySelector('nav'); if (n) document.documentElement.style.setProperty('--navh', n.offsetHeight + 'px'); }
+function offerUndo(msg){
+  if (!undoSnap) return;
+  $('undoMsg').textContent = msg; setNavH();
+  if (!$('sheetBg').classList.contains('show')) $('undoBar').classList.add('show');
+  document.body.classList.add('undo-on');
+  clearTimeout(undoTimer); undoTimer = setTimeout(hideUndo, 15000);
+}
+function hideUndo(){ undoSnap = null; clearTimeout(undoTimer); $('undoBar').classList.remove('show'); document.body.classList.remove('undo-on'); }
+function undo(){
+  if (!undoSnap) return;
+  S = JSON.parse(undoSnap); hideUndo(); save(); closeSheet(); render(); toast('↩️ Action annulée');
+}
+window.addEventListener('resize', setNavH);
 
 /* ============ OneDrive (compte Microsoft personnel) ============ */
-// L'appli n'a accès qu'à SON dossier : OneDrive › Applications › <nom de l'appli>.
-// Après chaque modification, elle y envoie stock-camion.json, stock-camion.csv et stock-camion.xlsx.
+// Accès limité au dossier de l'appli : OneDrive › Applications › BATTERIES VE
 const OD_SCOPES = ['Files.ReadWrite.AppFolder'];
-const OD_KEY = 'stockCamion_onedrive';
+const OD_KEY = 'batteriesVE_onedrive';
 const GRAPH = 'https://graph.microsoft.com/v1.0/me/drive/special/approot';
-const OD = {app: null, account: null, busy: false, again: false, timer: null, state: 'off', msg: '', folderUrl: ''};
+const OD = {app: null, account: null, busy: false, again: false, timer: null, state: 'off', msg: ''};
 let odMeta = (() => { try { return JSON.parse(localStorage.getItem(OD_KEY)) || {}; } catch(e){ return {}; } })();
-// odMeta : {pending, last, auto, err}
 if (odMeta.auto === undefined) odMeta.auto = true;
 function odSaveMeta(){ try { localStorage.setItem(OD_KEY, JSON.stringify(odMeta)); } catch(e){} }
 const odClientId = () => (S.settings.odClientId || '').trim();
 const odReady = () => !!(OD.app && OD.account);
 const odRedirect = () => location.origin + location.pathname.replace(/index\.html$/, '');
+const isEmpty = () => !S.ves.length && !S.sites.length;
 
 async function odInit(){
   odUi();
   if (!window.msal || !odClientId()) return;
-  if (!/^[0-9a-f-]{36}$/i.test(odClientId())) { odSet('err', 'Identifiant d\'application invalide.'); return; }
-  if (!location.protocol.startsWith('http')) { odSet('err', 'La connexion OneDrive ne marche que depuis l\'adresse en ligne de l\'appli (github.io).'); return; }
+  if (!/^[0-9a-f-]{36}$/i.test(odClientId())) return odSet('err', 'Identifiant d\'application invalide.');
+  if (!location.protocol.startsWith('http')) return odSet('err', 'La connexion OneDrive ne marche que depuis l\'adresse en ligne de l\'appli.');
   try {
-    OD.app = new msal.PublicClientApplication({
-      auth: {clientId: odClientId(), authority: 'https://login.microsoftonline.com/consumers', redirectUri: odRedirect()},
-      cache: {cacheLocation: 'localStorage'}
-    });
+    OD.app = new msal.PublicClientApplication({auth: {clientId: odClientId(), authority: 'https://login.microsoftonline.com/consumers', redirectUri: odRedirect()}, cache: {cacheLocation: 'localStorage'}});
     await OD.app.initialize();
     const r = await OD.app.handleRedirectPromise();
     if (r && r.account) { OD.app.setActiveAccount(r.account); toast('✅ Connecté à OneDrive'); odMeta.pending = true; odSaveMeta(); }
     const acc = OD.app.getActiveAccount() || OD.app.getAllAccounts()[0];
     if (acc) { OD.app.setActiveAccount(acc); OD.account = acc; }
     if (location.hash.includes('code=') || location.hash.includes('error=')) history.replaceState(null, '', location.pathname + location.search);
-  } catch(e) {
-    odSet('err', 'Connexion impossible : ' + odErrText(e));
-    return;
-  }
+  } catch(e) { return odSet('err', 'Connexion impossible : ' + odErrText(e)); }
   if (odReady()) {
     odSet(odMeta.pending ? 'wait' : 'ok');
-    if (!S.items.length) setTimeout(() => { if (!S.items.length) odRestore(true); }, 600); // appli vide → récupère tout seul
+    if (isEmpty()) setTimeout(() => { if (isEmpty()) odRestore(true); }, 600);
     else if (odMeta.pending && odMeta.auto) odSchedule(800);
-  }
-  else odSet('off');
+  } else odSet('off');
 }
 function odErrText(e){
   const m = (e && (e.errorMessage || e.message || e.errorCode)) || String(e);
-  if (/AADSTS700016|application.*not found/i.test(m)) return 'identifiant d\'application inconnu chez Microsoft (vérifie le copier-coller).';
+  if (/AADSTS700016|application.*not found/i.test(m)) return 'identifiant d\'application inconnu chez Microsoft.';
   if (/AADSTS50011|redirect/i.test(m)) return 'adresse de retour incorrecte dans la déclaration Microsoft (doit être ' + odRedirect() + ').';
-  if (/AADSTS9002326|cross-origin|Single-Page/i.test(m)) return 'la plateforme doit être « Application monopage (SPA) » dans la déclaration Microsoft.';
+  if (/AADSTS9002326|cross-origin|Single-Page/i.test(m)) return 'la plateforme doit être « Application monopage (SPA) ».';
   if (/user_cancelled|access_denied|consent/i.test(m)) return 'connexion annulée.';
   return m.slice(0, 160);
 }
-function odLogin(){
-  if (!OD.app) return toast('Enregistre d\'abord l\'identifiant de l\'application');
-  odSaveMeta();
-  OD.app.loginRedirect({scopes: OD_SCOPES, prompt: 'select_account'}).catch(e => odSet('err', odErrText(e)));
-}
+function odLogin(){ if (!OD.app) return toast('Enregistre d\'abord l\'identifiant'); OD.app.loginRedirect({scopes: OD_SCOPES, prompt: 'select_account'}).catch(e => odSet('err', odErrText(e))); }
 async function odLogout(){
-  if (!confirm('Déconnecter OneDrive ? Tes fichiers déjà envoyés restent sur ton OneDrive.')) return;
+  if (!confirm('Déconnecter OneDrive ? Les fichiers déjà envoyés restent sur ton OneDrive.')) return;
   try { if (OD.app && OD.account) await OD.app.clearCache({account: OD.account}); } catch(e){}
   OD.account = null; odMeta = {auto: odMeta.auto}; odSaveMeta(); odSet('off'); render();
 }
 async function odToken(){
   try { return (await OD.app.acquireTokenSilent({scopes: OD_SCOPES, account: OD.account})).accessToken; }
-  catch(e) {
-    if (e instanceof msal.InteractionRequiredAuthError) { odSet('err', 'Session expirée : appuie sur « Se reconnecter ».', true); }
-    throw e;
-  }
+  catch(e) { if (e instanceof msal.InteractionRequiredAuthError) odSet('err', 'Session expirée : appuie sur « Se reconnecter ».', true); throw e; }
 }
-function odSet(state, msg, needLogin){
-  OD.state = state; OD.msg = msg || ''; OD.needLogin = !!needLogin;
-  odMeta.err = state === 'err' ? OD.msg : ''; odSaveMeta(); odUi();
-}
+function odSet(state, msg, needLogin){ OD.state = state; OD.msg = msg || ''; OD.needLogin = !!needLogin; odUi(); }
 function odUi(){
   const b = $('odBadge'), d = $('odDot');
   if (b) { b.hidden = !odClientId(); d.className = 'oddot ' + ({ok:'ok', wait:'wait', busy:'wait', err:'err'}[OD.state] || ''); }
@@ -1001,198 +781,98 @@ function odUi(){
 }
 function odDirty(){
   if (!odClientId()) return;
-  if (!S.items.length) { odMeta.pending = false; odSaveMeta(); return; } // stock vide : on n'envoie rien
+  if (isEmpty()) { odMeta.pending = false; odSaveMeta(); return; } // rien à envoyer : OneDrive protégé
   odMeta.pending = true; odSaveMeta();
   if (odReady() && odMeta.auto) { if (OD.state !== 'busy') odSet('wait'); odSchedule(4000); }
 }
 function odSchedule(ms){ clearTimeout(OD.timer); OD.timer = setTimeout(() => odSync(), ms); }
 async function odPut(token, name, body, type){
-  const r = await fetch(`${GRAPH}:/${encodeURIComponent(name)}:/content`, {method: 'PUT', headers: {Authorization: 'Bearer ' + token, 'Content-Type': type}, body});
-  if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error(`OneDrive a refusé ${name} (${r.status}) ${t.slice(0, 120)}`); }
-  return r.json();
+  const r = await fetch(`${GRAPH}:/${name.split('/').map(encodeURIComponent).join('/')}:/content`, {method: 'PUT', headers: {Authorization: 'Bearer ' + token, 'Content-Type': type}, body});
+  if (!r.ok) throw new Error(`OneDrive a refusé ${name} (${r.status})`);
 }
 async function odSync(manual){
   if (!odReady()) return manual && toast('Connecte d\'abord OneDrive');
   if (OD.busy) { OD.again = true; return; }
-  if (!navigator.onLine) { odSet('wait', 'Hors ligne : envoi dès le retour du réseau.'); return manual && toast('Hors ligne : envoi dès le retour du réseau'); }
+  if (!navigator.onLine) { odSet('wait', 'Hors ligne : envoi dès le retour du réseau.'); return; }
+  if (isEmpty()) { odMeta.pending = false; odSaveMeta(); odSet('wait', 'Aucune donnée sur ce téléphone : rien n\'est envoyé (OneDrive protégé).'); return; }
   OD.busy = true; OD.again = false; odSet('busy', 'Envoi en cours…');
   try {
-    if (!S.items.length) {
-      odMeta.pending = false; odSaveMeta();
-      odSet('wait', 'Stock vide sur ce téléphone : rien n\'est envoyé (tes fichiers OneDrive sont protégés). Utilise « Récupérer ».');
-      if (manual) toast('Stock vide : rien envoyé, OneDrive protégé');
-      return;
-    }
     const token = await odToken();
-    const data = JSON.stringify(Object.assign({}, S, {exportedAt: new Date().toISOString()}), null, 1);
-    const xlsx = XlsxLite.stockWorkbook(sortedForExport(), S.history, {date: new Date().toLocaleString('fr-FR'), pending: it => pendingQty(it.id)});
-    await odPut(token, 'stock-camion.json', data, 'application/json');
-    await odPut(token, 'stock-camion.csv', inventoryCSV(), 'text/csv');
-    const x = await odPut(token, 'stock-camion.xlsx', xlsx, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    if (x && x.parentReference) OD.folderUrl = '';
+    await odPut(token, 'batteries-ve.json', JSON.stringify(Object.assign({}, S, {exportedAt: new Date().toISOString()}), null, 1), 'application/json');
+    await odPut(token, 'batteries-ve.xlsx', buildXlsx(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     odMeta.pending = OD.again; odMeta.last = Date.now(); odSaveMeta();
-    odSet(OD.again ? 'wait' : 'ok');
-    if (manual) toast('☁️ OneDrive à jour');
+    odSet(OD.again ? 'wait' : 'ok'); if (manual) toast('☁️ OneDrive à jour');
   } catch(e) {
-    odMeta.pending = true; odSaveMeta(); // sera renvoyé au prochain essai
-    if (OD.state !== 'err' || !OD.needLogin) odSet('err', !navigator.onLine ? 'Hors ligne : envoi dès le retour du réseau.' : odErrText(e), OD.needLogin);
-    if (!OD.needLogin) odSchedule(60000); // nouvel essai dans 1 min
-  } finally {
-    OD.busy = false;
-    if (OD.again && odMeta.auto) odSchedule(1500);
-  }
+    odMeta.pending = true; odSaveMeta();
+    if (!OD.needLogin) { odSet('err', !navigator.onLine ? 'Hors ligne : envoi dès le retour du réseau.' : odErrText(e)); odSchedule(60000); }
+  } finally { OD.busy = false; if (OD.again && odMeta.auto) odSchedule(1500); }
 }
-async function odRemoteData(token){
-  const r = await fetch(`${GRAPH}:/stock-camion.json`, {headers: {Authorization: 'Bearer ' + token}});
-  if (r.status === 404) return null;
-  if (!r.ok) throw new Error('OneDrive ' + r.status);
-  const meta = await r.json();
-  const d = await (await fetch(meta['@microsoft.graph.downloadUrl'])).json();
-  d.__modified = meta.lastModifiedDateTime;
-  return d;
-}
-let odFound = [], odSeen = [];
 async function odRestore(auto){
   if (!odReady()) return auto || toast('Connecte d\'abord OneDrive');
-  if (auto) toast('📥 Stock vide : récupération depuis OneDrive…');
-  else openSheet(`<h3>📥 Récupérer depuis OneDrive</h3><div class="sub">Recherche des fichiers dans ton dossier OneDrive…</div>`);
   try {
-    const token = await odToken();
-    const auth = {headers: {Authorization: 'Bearer ' + token}};
+    const token = await odToken(), auth = {headers: {Authorization: 'Bearer ' + token}};
     const r = await fetch(`${GRAPH}/children?$top=200`, auth);
-    if (!r.ok) throw new Error('liste des fichiers OneDrive : erreur ' + r.status);
-    const all = (await r.json()).value || [];
-    const files = all.filter(f => /\.(json|csv)$/i.test(f.name));
-    odFound = []; odSeen = all.map(f => ({name: f.name, info: /\.(json|csv)$/i.test(f.name) ? '…' : 'ignoré'}));
+    if (!r.ok) throw new Error('liste des fichiers : erreur ' + r.status);
+    const files = ((await r.json()).value || []).filter(f => /\.json$/i.test(f.name));
+    let best = null;
     for (const f of files) {
-      const seen = odSeen.find(x => x.name === f.name);
       try {
-        // Lien de téléchargement : fourni dans la liste, sinon demandé fichier par fichier
         let url = f['@microsoft.graph.downloadUrl'];
         if (!url && f.id) { const m = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${f.id}`, auth); if (m.ok) url = (await m.json())['@microsoft.graph.downloadUrl']; }
-        let buf;
-        if (url) { const d = await fetch(url); if (!d.ok) throw new Error('téléchargement ' + d.status); buf = await d.arrayBuffer(); }
-        else { const d = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${f.id}/content`, auth); if (!d.ok) throw new Error('téléchargement ' + d.status); buf = await d.arrayBuffer(); }
-        const text = decodeBytes(buf);
-        if (/\.json$/i.test(f.name)) {
-          const d = JSON.parse(text);
-          if (!Array.isArray(d.items)) continue;
-          odFound.push({kind: 'json', name: f.name, when: d.exportedAt || f.lastModifiedDateTime, count: d.items.length, data: d});
-          seen.info = d.items.length + ' article(s)';
-        } else {
-          const {items, skipped} = csvToItems(text);
-          odFound.push({kind: 'csv', name: f.name, when: f.lastModifiedDateTime, count: items.length, items, skipped});
-          seen.info = items.length + ' article(s), ' + buf.byteLength + ' octets';
-        }
-      } catch(e) { seen.info = 'illisible : ' + (e.message || e); }
+        const d = url ? await (await fetch(url)).json() : await (await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${f.id}/content`, auth)).json();
+        if (!Array.isArray(d.ves) || !d.ves.length) continue;
+        const when = Date.parse(d.exportedAt || f.lastModifiedDateTime);
+        if (!best || when > best.when) best = {d, when, name: f.name};
+      } catch(e) {}
     }
-    // Les fichiers avec des articles d'abord, puis du plus récent au plus ancien
-    odFound.sort((a, b) => (!b.count - !a.count) || (Date.parse(b.when) - Date.parse(a.when)));
-    // Choix automatique : la sauvegarde complète si elle contient des articles,
-    // sinon le fichier CSV le plus récent qui en contient.
-    const full = odFound.filter(f => f.count);
-    const pick = full.find(f => f.kind === 'json') || full.find(f => f.kind === 'csv');
-    if (!pick) {
-      if (auto) return;
-      return openSheet(`<h3>📥 Récupérer depuis OneDrive</h3>
-        <div class="sub">Aucun article à récupérer dans le dossier OneDrive <b>Applications › Stock Camion</b>.</div>
-        <div class="preview" style="margin-top:8px">${odSeen.length ? odSeen.map(x => esc(x.name + ' → ' + x.info)).join('\n') : 'Le dossier est vide.'}</div>
-        <div class="hint">Dépose ton fichier d'inventaire (.csv) dans ce dossier avec l'appli OneDrive, puis appuie à nouveau sur « Récupérer ».</div>
-        <button class="btn block" onclick="closeSheet()">Fermer</button>`);
-    }
-    odUseFound(odFound.indexOf(pick));
-  } catch(e) { if (!auto) closeSheet(); toast('Récupération impossible : ' + odErrText(e)); }
-}
-function odUseFound(k){
-  const f = odFound[k]; if (!f) return;
-  closeSheet();
-  if (f.kind === 'csv') {
-    pendingImport = f.items;
-    applyImport('merge'); // ajoute / met à jour les articles, annulable
-    return offerUndo(`📥 ${f.count} articles récupérés depuis « ${f.name} »`);
-  }
-  snapshot();
-  const d = Object.assign({}, f.data); delete d.exportedAt;
-  S = Object.assign(defaults(), d); save(); render();
-  offerUndo(`📥 Sauvegarde OneDrive récupérée (${d.items.length} articles)`);
-}
-async function odOpenFolder(){
-  try {
-    const token = await odToken();
-    const r = await fetch(GRAPH, {headers: {Authorization: 'Bearer ' + token}});
-    const j = await r.json();
-    if (j.webUrl) window.open(j.webUrl, '_blank'); else throw new Error('dossier introuvable');
-  } catch(e) { toast('Impossible d\'ouvrir le dossier : ' + odErrText(e)); }
+    if (!best) return auto || toast('Aucune sauvegarde avec des VE sur OneDrive');
+    snapshot();
+    const d = best.d; delete d.exportedAt;
+    S = Object.assign(defaults(), d, {settings: Object.assign(defaults().settings, d.settings || {}, {odClientId: odClientId() || (d.settings || {}).odClientId})});
+    save(); render(); offerUndo(`📥 ${S.ves.length} VE récupérée${S.ves.length>1?'s':''} depuis OneDrive`);
+  } catch(e) { toast('Récupération impossible : ' + odErrText(e)); }
 }
 function odSaveClientId(){
   const v = ($('odClient').value || '').trim();
-  if (v && !/^[0-9a-f-]{36}$/i.test(v)) return toast('Identifiant invalide : il ressemble à 1a2b3c4d-…-…');
-  S.settings.odClientId = v; save(); OD.app = null; OD.account = null; odInit(); toast(v ? 'Identifiant enregistré' : 'Identifiant effacé');
+  if (v && !/^[0-9a-f-]{36}$/i.test(v)) return toast('Identifiant invalide (format 1a2b3c4d-…)');
+  S.settings.odClientId = v; save(); OD.app = null; OD.account = null; odInit(); toast(v ? 'Identifiant enregistré' : 'Identifiant effacé'); render();
 }
-function odToggleAuto(on){ odMeta.auto = on; odSaveMeta(); if (on) odDirty(); odUi(); }
 function odSettingsHtml(){
   const cid = odClientId();
   const dot = s => `<span class="oddot ${s}" style="position:static;display:inline-block;border-color:var(--card)"></span>`;
   if (!cid) return `
-    <div class="sub">Envoie automatiquement ton stock (Excel, CSV et sauvegarde) sur <b>ton OneDrive personnel</b> après chaque modification. L'appli n'a accès qu'à un seul dossier : <b>Applications › Stock Camion</b>.</div>
+    <div class="sub">Copie automatique de tes VE (sauvegarde + Excel) sur <b>ton OneDrive personnel</b>, dans le seul dossier <b>Applications › BATTERIES VE</b>.</div>
     <label>Identifiant de l'application (Client ID)</label>
-    <input id="odClient" placeholder="ex. 1a2b3c4d-5e6f-7a8b-9c0d-112233445566" autocomplete="off">
-    <button class="btn primary block" onclick="odSaveClientId()">Enregistrer l'identifiant</button>
-    <div class="hint">Cet identifiant s'obtient une seule fois en déclarant l'appli chez Microsoft (gratuit).</div>`;
+    <input id="odClient" placeholder="ex. 1a2b3c4d-5e6f-…" autocomplete="off">
+    <button class="btn primary block" onclick="odSaveClientId()">Enregistrer l'identifiant</button>`;
   if (!odReady()) return `
     <div class="odstat">${dot(OD.state === 'err' ? 'err' : '')} <span>${OD.state === 'err' ? esc(OD.msg) : 'Non connecté'}</span></div>
     <button class="btn primary block" onclick="odLogin()">🔑 Se connecter à mon compte Microsoft</button>
-    <div class="hint">Une page Microsoft s'ouvre : connecte-toi avec ton compte <b>personnel</b> (outlook / hotmail) et accepte l'accès au dossier de l'appli.</div>
+    <div class="hint">Utilise le même compte que pour l'appli de stock (celui de ton OneDrive).</div>
     <details style="margin-top:10px"><summary class="sub">Identifiant de l'application</summary>
       <input id="odClient" value="${esc(cid)}" style="margin-top:6px"><button class="btn block" onclick="odSaveClientId()">Modifier</button></details>`;
-  const st = {ok: ['ok', 'À jour'], wait: ['wait', 'Modifications en attente d\'envoi'], busy: ['wait', 'Envoi en cours…'], err: ['err', OD.msg], off: ['', '']}[OD.state] || ['', ''];
+  const st = {ok: ['ok', 'À jour'], wait: ['wait', 'Modifications en attente d\'envoi'], busy: ['wait', 'Envoi en cours…'], err: ['err', OD.msg]}[OD.state] || ['', ''];
   return `
     <div class="odstat">${dot(st[0])} <b>${esc(st[1] || '')}</b></div>
     ${OD.state === 'wait' && OD.msg ? `<div class="sub">${esc(OD.msg)}</div>` : ''}
     <div class="sub">Compte : <b>${esc(OD.account.username || '')}</b><br>Dernier envoi : <b>${odMeta.last ? fmtDate(odMeta.last) : 'jamais'}</b></div>
     <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px;color:var(--text)">
-      <input type="checkbox" class="check" ${odMeta.auto ? 'checked' : ''} onchange="odToggleAuto(this.checked)"> Envoi automatique après chaque modification</label>
+      <input type="checkbox" class="check" ${odMeta.auto ? 'checked' : ''} onchange="odMeta.auto=this.checked;odSaveMeta();if(this.checked)odDirty()"> Envoi automatique après chaque modification</label>
     ${OD.needLogin ? `<button class="btn primary block" onclick="odLogin()">🔑 Se reconnecter</button>` : ''}
     <button class="btn block" onclick="odSync(true)">🔄 Synchroniser maintenant</button>
-    <button class="btn block" onclick="odOpenFolder()">📂 Ouvrir le dossier OneDrive</button>
     <button class="btn block" onclick="odRestore()">📥 Récupérer mes données depuis OneDrive</button>
-    <div class="hint">En un appui : reprend la sauvegarde complète si elle contient des articles, sinon le fichier CSV le plus récent du dossier (par exemple un inventaire que tu y as déposé).</div>
-    <div class="hint">Fichiers envoyés : <b>stock-camion.xlsx</b> (Excel mis en forme + historique), <b>stock-camion.csv</b> et <b>stock-camion.json</b> (sauvegarde complète). L'appli reste la référence : une modification faite dans l'Excel sur OneDrive sera remplacée au prochain envoi.</div>
+    <div class="hint">Fichiers : <b>batteries-ve.xlsx</b> (onglets Batteries, Mesures, Carnet) et <b>batteries-ve.json</b> (sauvegarde complète).</div>
     <button class="btn block" onclick="odLogout()">Déconnecter OneDrive</button>`;
 }
 window.addEventListener('online', () => { if (odReady() && odMeta.pending && odMeta.auto) odSchedule(1500); });
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || !odReady()) return;
-  if (!S.items.length) odRestore(true);
-  else if (odMeta.pending && odMeta.auto) odSchedule(1500);
+  if (isEmpty()) odRestore(true); else if (odMeta.pending && odMeta.auto) odSchedule(1500);
 });
 
-function sortedForExport(){ return S.items.slice(); } // même ordre que ton inventaire
-function exportXlsx(){
-  const x = XlsxLite.stockWorkbook(sortedForExport(), S.history, {date: new Date().toLocaleString('fr-FR'), pending: it => pendingQty(it.id)});
-  download(`stock-camion-${new Date().toISOString().slice(0,10)}.xlsx`, x, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-}
-
-function importData(file){
-  if (!file) return;
-  const r = new FileReader();
-  r.onload = () => {
-    try { const d = JSON.parse(r.result); if (!Array.isArray(d.items)) throw 0;
-      if (!confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')) return;
-      snapshot(); S = Object.assign(defaults(), d); save(); render(); offerUndo('Sauvegarde importée'); }
-    catch(e){ toast('Fichier de sauvegarde invalide'); }
-  };
-  r.readAsText(file);
-}
-function resetAll(){
-  if (!confirm('Effacer tout le stock, l\'historique et les réglages ?')) return;
-  S = defaults(); save(); render(); toast('Données effacées');
-}
-
+/* ============ Démarrage ============ */
 render();
 odInit();
-
-/* ============ Appli installable / hors ligne ============ */
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
